@@ -1,10 +1,10 @@
-# 🍌 Nano BananaAI (纳米香蕉绘图站)
+🍌 Nano BananaAI (纳米香蕉绘图站)
 
 Nano BananaAI 是一个轻量级、功能强大的 AI 绘图 Web 应用。支持文生图、图生图及图片二次编辑功能，并配备了完整的用户系统和超级管理员后台。
 
 ## ✨ 功能特性
 
-- **🎨 AI 绘图**：支持文本生成图片 (Text-to-Image) 和图片生成图片 (Image-to-Image)
+- **🎨 AI 绘图**：支持文本生成图片 (Text-to-Image) 和图片生成图片 (Image-to-Image)。支持用户签到、支持用户自己配置API。
 - **✏️ 二次编辑**：生成后的图片支持在线微调和修饰。
 - **🔐 用户系统**：包含完整的用户注册、登录、密码找回流程（支持邮箱验证）。
 - **🛡️ 后台管理**：内置超级管理员系统，可管理用户状态、查看绘图记录等。
@@ -20,3 +20,11 @@ Nano BananaAI 是一个轻量级、功能强大的 AI 绘图 Web 应用。支持
 ### 1. 克隆项目
 ```bash
 git clone https://github.com/pili1121/Nano-Banana-.git
+
+2.  配置环境变量
+请将 .env.example 复制为 .env 并填入你的 API Key 和数据库配置。
+
+☕ 赞赏与交流
+如果觉得项目不错，欢迎请作者喝杯咖啡，或扫码加好友交流！
+微信打赏 (Donate)	➕ 加我微信 (Contact)
+<img src="https://github.com/user-attachments/assets/45a836a0-5c80-4000-94e9-4aaf14e2dbe3" width="200">	<img src="https://github.com/user-attachments/assets/d32d5ac1-b6d2-46f3-a1b9-06495cc5f95b" width="200">
