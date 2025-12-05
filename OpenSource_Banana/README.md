@@ -27,7 +27,7 @@
 
 ### 环境要求
 - Node.js 16.0+
-- MongoDB 4.4+
+- MySQL
 - 现代浏览器（Chrome、Firefox、Safari等）
 
 ### 安装步骤
