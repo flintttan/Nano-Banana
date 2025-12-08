@@ -63,6 +63,24 @@
   - 路径更新
   - 向后兼容性
 
+### 📦 批量图生图功能
+
+- **[BATCH_FEATURE.md](./BATCH_FEATURE.md)** - 批量图生图功能说明
+  - 功能概述
+  - 数据库表结构
+  - API 接口
+  - 使用流程
+
+- **[BATCH_DEPLOYMENT.md](./BATCH_DEPLOYMENT.md)** - 批量功能部署指南
+  - 数据库初始化
+  - 服务部署与验证
+  - 常见问题与优化建议
+
+- **[BATCH_IMPLEMENTATION_STATUS.md](./BATCH_IMPLEMENTATION_STATUS.md)** - 实现状态与进度
+  - 已完成功能
+  - 待办事项
+  - 文件清单与后续计划
+
 ---
 
 ## 🎯 按需求查找
@@ -93,6 +111,12 @@
 2. **[DOCKER_DEPLOYMENT.md](./DOCKER_DEPLOYMENT.md)** - Docker 生产部署
 3. **[COMPOSE_OPTIMIZATION.md](./guides/COMPOSE_OPTIMIZATION.md)** - 生产优化
 
+### 批量图生图相关
+
+1. **[BATCH_FEATURE.md](./BATCH_FEATURE.md)** - 批量图生图功能说明
+2. **[BATCH_DEPLOYMENT.md](./BATCH_DEPLOYMENT.md)** - 批量功能部署
+3. **[BATCH_IMPLEMENTATION_STATUS.md](./BATCH_IMPLEMENTATION_STATUS.md)** - 当前实现状态
+
 ---
 
 ## 📊 文档统计
@@ -103,7 +127,8 @@
 | 项目指南 | 2 | 结构、备份 |
 | 部署文档 | 3 | 部署指南 |
 | 优化文档 | 3 | 优化说明 |
-| **总计** | **9** | **完整覆盖** |
+| 批量图生图 | 3 | 功能说明、部署、实现状态 |
+| **总计** | **12** | **完整覆盖** |
 
 ---
 
@@ -120,8 +145,8 @@
 如果您发现文档有任何问题或需要改进，欢迎提交 Pull Request 或 Issue。
 
 文档位置：
-- 根目录文档：`docs/guides/`
-- 部署文档：`docs/`
+- 指南文档：`docs/guides/`
+- 功能与部署文档：`docs/`
 
 ---
 

@@ -182,6 +182,9 @@ make logs
 | [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) | 通用部署指南 |
 | [docs/DOCKER_DEPLOYMENT.md](./docs/DOCKER_DEPLOYMENT.md) | Docker 部署指南 |
 | [docs/README.docker.md](./docs/README.docker.md) | Docker 快速开始 |
+| [docs/BATCH_FEATURE.md](./docs/BATCH_FEATURE.md) | 批量图生图功能说明 |
+| [docs/BATCH_DEPLOYMENT.md](./docs/BATCH_DEPLOYMENT.md) | 批量图生图部署指南 |
+| [docs/BATCH_IMPLEMENTATION_STATUS.md](./docs/BATCH_IMPLEMENTATION_STATUS.md) | 批量图生图实现状态 |
 
 ---
 

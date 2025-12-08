@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+    <title>Nano Banana - 批量图生图</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-primary: #09090b;
+            --bg-secondary: rgba(24, 24, 27, 0.9);
+            --bg-tertiary: rgba(39, 39, 42, 0.9);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --text-primary: #f4f4f5;
+            --text-secondary: #a1a1aa;
+            --accent-blue: #3b82f6;
+            --accent-green: #22c55e;
+            --accent-yellow: #eab308;
+            --accent-red: #ef4444;
+            --glass-blur: blur(20px);
+            --shadow-soft: 0 18px 45px rgba(0, 0, 0, 0.65);
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            background-image:
+                radial-gradient(circle at 0% 0%, rgba(59, 130, 246, 0.20) 0, transparent 40%),
+                radial-gradient(circle at 100% 0%, rgba(147, 51, 234, 0.20) 0, transparent 40%),
+                radial-gradient(circle at 50% 100%, rgba(14, 165, 233, 0.18) 0, transparent 45%);
+            color: var(--text-primary);
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+        }
+
+        .component-bg {
+            background-color: var(--bg-secondary);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--border-color);
+        }
+
+        .component-tertiary {
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+        }
+
+        .border-custom {
+            border-color: var(--border-color);
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.7); border-radius: 999px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+
+        .status-badge {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .status-pending { background: rgba(148, 163, 184, 0.16); color: #e5e7eb; border: 1px solid rgba(148, 163, 184, 0.4); }
+        .status-processing { background: rgba(234, 179, 8, 0.12); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.4); }
+        .status-completed { background: rgba(22, 163, 74, 0.12); color: #4ade80; border: 1px solid rgba(22, 163, 74, 0.4); }
+        .status-failed { background: rgba(239, 68, 68, 0.12); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4); }
+        .status-cancelled { background: rgba(148, 163, 184, 0.12); color: #9ca3af; border: 1px solid rgba(148, 163, 184, 0.4); }
+
+        .progress-track {
+            height: 6px;
+            border-radius: 999px;
+            background: rgba(17, 24, 39, 0.9);
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #3b82f6, #a855f7);
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.6);
+            transition: width 0.25s ease-out;
+        }
+
+        .drop-zone {
+            border: 1px dashed rgba(148, 163, 184, 0.6);
+            border-radius: 16px;
+            background: radial-gradient(circle at top left, rgba(59, 130, 246, 0.09), transparent 55%),
+                        radial-gradient(circle at bottom right, rgba(139, 92, 246, 0.10), transparent 50%),
+                        rgba(15, 23, 42, 0.9);
+            transition: all 0.2s ease;
+        }
+
+        .drop-zone.drag-over {
+            border-color: rgba(59, 130, 246, 0.9);
+            background: radial-gradient(circle at top left, rgba(59, 130, 246, 0.25), transparent 55%),
+                        radial-gradient(circle at bottom right, rgba(139, 92, 246, 0.28), transparent 50%),
+                        rgba(15, 23, 42, 0.98);
+            box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.4), 0 20px 45px rgba(15, 23, 42, 0.9);
+        }
+
+        .file-pill {
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(148, 163, 184, 0.45);
+            font-size: 11px;
+        }
+
+        .shadow-deep {
+            box-shadow: var(--shadow-soft);
+        }
+
+        @media (max-width: 768px) {
+            body {
+                background-position: center;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen text-sm text-gray-100">
+    <!-- 顶部导航 -->
+    <header class="sticky top-0 z-30 border-b border-white/10 bg-[#020617]/80 backdrop-blur-xl">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <a href="/index.html" class="w-9 h-9 rounded-2xl bg-gradient-to-br from-blue-500 to-violet-500 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                    <span class="text-lg">🍌</span>
+                </a>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-sm font-semibold tracking-tight text-white">Nano Banana 批量图生图</h1>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-blue-500/10 text-blue-400 border border-blue-500/30">BETA</span>
+                    </div>
+                    <p class="text-[11px] text-gray-400 mt-0.5">一次性批量上传多张图片，由队列自动完成处理</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="/index.html" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/10 text-[11px] text-gray-300 hover:border-blue-400/60 hover:text-blue-300 transition-colors">
+                    <i class="fas fa-arrow-left text-xs"></i>
+                    返回创作工作台
+                </a>
+                <button id="themeToggle" type="button" class="w-9 h-9 rounded-xl component-bg flex items-center justify-center border border-white/10 text-gray-300 hover:text-white shadow-md shadow-black/40">
+                    <i class="fas fa-moon text-sm" id="themeIcon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主体内容 -->
+    <main class="max-w-6xl mx-auto px-4 py-6 lg:py-8 grid grid-cols-1 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1.2fr)] gap-6 lg:gap-7">
+        <!-- 左侧：批量配置与上传 -->
+        <section class="component-bg rounded-2xl shadow-deep px-5 py-5 lg:px-6 lg:py-6 space-y-5">
+            <div class="flex items-start justify-between gap-2">
+                <div>
+                    <h2 class="text-base lg:text-lg font-semibold text-white flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center">
+                            <i class="fas fa-layer-group text-xs"></i>
+                        </span>
+                        批量任务配置
+                    </h2>
+                    <p class="mt-1 text-[11px] text-gray-400 leading-relaxed">
+                        上传多张参考图，输入统一提示词，系统将自动排队渲染。非常适合多视角、多版本的批量创作。
+                    </p>
+                </div>
+                <div class="hidden md:flex flex-col items-end gap-1 text-[11px] text-gray-400">
+                    <span class="inline-flex items-center gap-1">
+                        <i class="fas fa-bolt text-yellow-400"></i> 实时队列监控
+                    </span>
+                    <span class="inline-flex items-center gap-1">
+                        <i class="fas fa-images text-sky-400"></i> 单次最多 <span class="font-semibold text-gray-100">50</span> 张
+                    </span>
+                </div>
+            </div>
+
+            <!-- 拖拽上传区域 -->
+            <div id="dropArea" class="drop-zone relative p-4 lg:p-5 cursor-pointer">
+                <input id="fileInput" type="file" accept="image/*" multiple class="hidden">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div class="flex items-center justify-center sm:justify-start gap-3">
+                        <div class="w-11 h-11 rounded-2xl bg-black/30 flex items-center justify-center border border-blue-500/40 shadow-inner shadow-black/50">
+                            <i class="fas fa-cloud-arrow-up text-xl text-blue-400"></i>
+                        </div>
+                        <div class="space-y-1">
+                            <p class="text-sm font-medium text-gray-100">拖拽图片或文件夹到此处</p>
+                            <p class="text-[11px] text-gray-400 leading-relaxed">
+                                支持 JPG / PNG / WebP 等常见格式，单个文件不超过 <span class="text-gray-200 font-semibold">10MB</span>。
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex-1 flex flex-col sm:items-end gap-2">
+                        <div class="flex flex-wrap items-center gap-2 text-[11px] text-gray-400">
+                            <span id="fileCountBadge" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-white/10 bg-black/40">
+                                <i class="fas fa-images text-gray-300"></i>
+                                <span id="fileCountText">尚未选择图片</span>
+                            </span>
+                            <span class="hidden sm:inline text-gray-500">·</span>
+                            <span class="hidden sm:inline">最多 <span class="text-gray-100 font-semibold">50</span> 张</span>
+                        </div>
+                        <button id="chooseFilesBtn" type="button" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-600 hover:bg-blue-500 text-[11px] font-semibold shadow-lg shadow-blue-500/30">
+                            <i class="fas fa-folder-open text-xs"></i>
+                            点击选择文件
+                        </button>
+                    </div>
+                </div>
+                <div id="fileList" class="mt-4 flex flex-wrap gap-2 max-h-32 overflow-y-auto"></div>
+            </div>
+
+            <!-- 提示词与预设 -->
+            <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                    <label for="promptInput" class="text-[11px] font-semibold text-gray-300 uppercase tracking-wider">
+                        统一提示词 Prompt
+                    </label>
+                    <div class="flex items-center gap-2">
+                        <button id="clearPromptBtn" type="button" class="text-[11px] text-gray-400 hover:text-gray-200">
+                            清空
+                        </button>
+                    </div>
+                </div>
+                <div class="relative">
+                    <textarea id="promptInput" rows="4" maxlength="2000"
+                        class="w-full component-tertiary rounded-xl px-3.5 py-3 text-[13px] leading-relaxed resize-none focus:outline-none focus:ring-1 focus:ring-blue-500/60 bg-[#020617]/80"
+                        placeholder="描述你想要统一应用到所有图片上的画面风格、内容和细节..."></textarea>
+                    <div class="absolute bottom-2 right-3 text-[10px] text-gray-500">
+                        <span id="promptCharCount">0</span>/2000
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                    <div class="flex items-center gap-2 text-[11px] text-gray-400 flex-1">
+                        <i class="fas fa-wand-magic-sparkles text-[13px] text-purple-400"></i>
+                        <span class="font-medium">预设提示词</span>
+                        <span class="hidden sm:inline text-gray-500">·</span>
+                        <span class="hidden sm:inline">由管理员统一维护</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <select id="presetSelect" class="component-tertiary text-[11px] rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500/60 bg-[#020617]/80">
+                            <option value="">从预设中选择...</option>
+                        </select>
+                        <button id="reloadPresetsBtn" type="button" class="px-2.5 py-1.5 rounded-lg border border-white/10 text-[11px] text-gray-300 hover:border-blue-500/60 hover:text-blue-300">
+                            <i class="fas fa-rotate text-[10px] mr-1"></i>刷新
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 模型与批次信息 -->
+            <div class="grid sm:grid-cols-2 gap-4">
+                <div class="space-y-2">
+                    <label class="text-[11px] font-semibold text-gray-300 uppercase tracking-wider block">
+                        使用模型
+                    </label>
+                    <div class="relative">
+                        <button id="modelSelector" type="button" class="w-full component-tertiary rounded-xl px-3.5 py-2.5 flex items-center justify-between hover:border-blue-500/60 transition-colors text-left">
+                            <div class="flex items-center gap-3">
+                                <span class="text-xl">🍌</span>
+                                <div class="flex flex-col leading-tight">
+                                    <span class="text-[13px] font-medium">Nano Banana</span>
+                                    <span class="text-[11px] text-gray-400">默认模型 · 建议优先使用</span>
+                                </div>
+                            </div>
+                            <i class="fas fa-chevron-down text-[10px] text-gray-400"></i>
+                        </button>
+                        <div id="modelDropdown" class="hidden absolute z-20 top-full left-0 right-0 mt-2 component-tertiary rounded-xl shadow-2xl overflow-hidden p-1">
+                            <div class="p-3 text-center text-[11px] text-gray-400">正在加载模型列表...</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <label for="batchNameInput" class="text-[11px] font-semibold text-gray-300 uppercase tracking-wider block">
+                        批次名称
+                    </label>
+                    <input id="batchNameInput" type="text" maxlength="80"
+                        class="w-full component-tertiary rounded-xl px-3.5 py-2.5 text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500/60 bg-[#020617]/80"
+                        placeholder="例如：模特写真批次 A / 产品白底图第1批">
+                </div>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="pt-1 space-y-2">
+                <button id="startBatchBtn" type="button"
+                    class="w-full inline-flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-violet-500 text-sm font-semibold shadow-lg shadow-blue-500/40 active:scale-[.98] transition-transform">
+                    <span>开始批量生成</span>
+                    <i class="fas fa-rocket-launch text-sm"></i>
+                </button>
+                <p class="text-[11px] text-gray-400 leading-relaxed">
+                    创建批量任务后，可在右侧实时查看队列进度和每张图片的处理状态。生成的结果会自动保存在
+                    <span class="text-gray-200 font-medium">「我的作品」</span> 中。
+                </p>
+            </div>
+        </section>
+
+        <!-- 右侧：队列进度与任务列表 -->
+        <section class="space-y-4 lg:space-y-5">
+            <!-- 当前队列进度 -->
+            <div class="component-bg rounded-2xl shadow-deep px-5 py-4 lg:px-6 lg:py-5 space-y-4">
+                <div class="flex items-start justify-between gap-3">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-sm font-semibold text-white">当前批次进度</h3>
+                            <span id="currentQueueStatusBadge" class="status-badge status-pending hidden">
+                                <i class="fas fa-circle-notch fa-spin text-[10px]"></i>
+                                <span>等待中</span>
+                            </span>
+                        </div>
+                        <p id="currentBatchName" class="mt-1 text-[11px] text-gray-400">
+                            尚未创建批量任务。
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button id="refreshCurrentQueueBtn" type="button" class="hidden px-2.5 py-1.5 rounded-lg border border-white/10 text-[11px] text-gray-300 hover:border-blue-500/60 hover:text-blue-300">
+                            <i class="fas fa-sync-alt text-[10px] mr-1"></i> 刷新
+                        </button>
+                        <button id="cancelQueueBtn" type="button" class="hidden px-2.5 py-1.5 rounded-lg border border-red-500/40 text-[11px] text-red-300 hover:bg-red-500/10">
+                            <i class="fas fa-ban text-[10px] mr-1"></i> 取消队列
+                        </button>
+                    </div>
+                </div>
+
+                <div id="progressSection" class="space-y-3 hidden">
+                    <div class="flex items-center justify-between text-[11px] text-gray-400">
+                        <span>处理进度</span>
+                        <span id="progressSummaryText">0 / 0</span>
+                    </div>
+                    <div class="progress-track">
+                        <div id="progressBar" class="progress-bar" style="width: 0%;"></div>
+                    </div>
+                    <div class="grid grid-cols-4 gap-2 text-[11px]">
+                        <div class="rounded-xl component-tertiary px-3 py-2.5 flex flex-col gap-1">
+                            <span class="text-[10px] text-gray-400 flex items-center gap-1">
+                                <i class="fas fa-images text-[11px] text-gray-300"></i> 总图片
+                            </span>
+                            <span id="statTotal" class="text-sm font-semibold text-white">0</span>
+                        </div>
+                        <div class="rounded-xl component-tertiary px-3 py-2.5 flex flex-col gap-1">
+                            <span class="text-[10px] text-gray-400 flex items-center gap-1">
+                                <i class="fas fa-spinner text-[11px] text-yellow-400"></i> 进行中
+                            </span>
+                            <span id="statProcessing" class="text-sm font-semibold text-yellow-300">0</span>
+                        </div>
+                        <div class="rounded-xl component-tertiary px-3 py-2.5 flex flex-col gap-1">
+                            <span class="text-[10px] text-gray-400 flex items-center gap-1">
+                                <i class="fas fa-check-circle text-[11px] text-emerald-400"></i> 已完成
+                            </span>
+                            <span id="statCompleted" class="text-sm font-semibold text-emerald-300">0</span>
+                        </div>
+                        <div class="rounded-xl component-tertiary px-3 py-2.5 flex flex-col gap-1">
+                            <span class="text-[10px] text-gray-400 flex items-center gap-1">
+                                <i class="fas fa-triangle-exclamation text-[11px] text-red-400"></i> 失败
+                            </span>
+                            <span id="statFailed" class="text-sm font-semibold text-red-300">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 任务列表 -->
+            <div class="component-bg rounded-2xl shadow-deep px-5 py-4 lg:px-6 lg:py-5 space-y-3">
+                <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <h3 class="text-sm font-semibold text-white">任务明细</h3>
+                        <span id="taskSummary" class="text-[11px] text-gray-400">暂无任务</span>
+                    </div>
+                </div>
+                <div id="tasksContainer" class="grid sm:grid-cols-2 gap-3 max-h-[420px] overflow-y-auto">
+                    <div class="col-span-full text-[12px] text-gray-400 py-10 text-center border border-dashed border-white/10 rounded-xl">
+                        <i class="fas fa-info-circle mr-1 text-gray-500"></i>
+                        创建批量任务后，这里将显示每张图片的处理状态与结果。
+                    </div>
+                </div>
+            </div>
+
+            <!-- 历史批次 -->
+            <div class="component-bg rounded-2xl shadow-deep px-5 py-4 lg:px-6 lg:py-5 space-y-3">
+                <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <h3 class="text-sm font-semibold text-white">历史批次</h3>
+                        <span class="text-[11px] text-gray-400">最近 20 条记录</span>
+                    </div>
+                    <button id="refreshQueuesBtn" type="button" class="px-2.5 py-1.5 rounded-lg border border-white/10 text-[11px] text-gray-300 hover:border-blue-500/60 hover:text-blue-300">
+                        <i class="fas fa-sync-alt text-[10px] mr-1"></i> 刷新
+                    </button>
+                </div>
+                <div id="queuesList" class="space-y-2 max-h-[220px] overflow-y-auto text-[11px]"></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 图片编辑弹窗 -->
+    <div id="editModal" class="hidden fixed inset-0 z-40">
+        <div id="editModalBackdrop" class="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
+        <div class="relative z-10 max-w-4xl mx-auto my-6 lg:my-10 px-4">
+            <div class="component-bg rounded-2xl shadow-2xl border border-white/10 overflow-hidden">
+                <div class="px-5 py-3 border-b border-white/10 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="w-7 h-7 rounded-xl bg-blue-500/20 flex items-center justify-center text-blue-400">
+                            <i class="fas fa-pen-nib text-xs"></i>
+                        </span>
+                        <div>
+                            <h3 class="text-sm font-semibold text-white">图片二次编辑</h3>
+                            <p class="text-[11px] text-gray-400">基于原始图片重新生成，结果会保存到「我的作品」。</p>
+                        </div>
+                    </div>
+                    <button id="closeEditModalBtn" type="button" class="w-8 h-8 rounded-full border border-white/10 text-gray-300 hover:bg-white/10">
+                        <i class="fas fa-times text-xs"></i>
+                    </button>
+                </div>
+                <div class="px-5 py-4 space-y-4">
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                            <p class="text-[11px] text-gray-400">原始图片</p>
+                            <div class="relative rounded-xl component-tertiary overflow-hidden aspect-video flex items-center justify-center">
+                                <img id="editOriginalImage" src="" alt="原始图片" class="max-h-64 w-full object-contain">
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <p class="text-[11px] text-gray-400">最新结果</p>
+                            <div class="relative rounded-xl component-tertiary overflow-hidden aspect-video flex items-center justify-center">
+                                <img id="editGeneratedImage" src="" alt="编辑结果" class="max-h-64 w-full object-contain hidden">
+                                <div id="editPlaceholder" class="absolute inset-0 flex items-center justify-center text-[11px] text-gray-500">
+                                    编辑完成后将在此展示最新图片
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <label for="editPromptInput" class="text-[11px] font-semibold text-gray-300 uppercase tracking-wider block">
+                            编辑提示词
+                        </label>
+                        <textarea id="editPromptInput" rows="3" maxlength="2000"
+                            class="w-full component-tertiary rounded-xl px-3.5 py-2.5 text-[13px] leading-relaxed resize-none focus:outline-none focus:ring-1 focus:ring-blue-500/60 bg-[#020617]/80"
+                            placeholder="可以基于原始提示词做小范围调整，例如：增加 '更柔和的光线' / '替换为蓝色背景' 等"></textarea>
+                    </div>
+                </div>
+                <div class="px-5 py-3 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <p id="editStatusText" class="text-[11px] text-gray-400">
+                        编辑生成的图片会作为新作品保存，不会覆盖批量结果。
+                    </p>
+                    <div class="flex items-center gap-2">
+                        <button id="downloadEditedImageBtn" type="button" class="hidden px-3 py-1.5 rounded-lg border border-white/10 text-[11px] text-gray-200 hover:border-blue-500/60 hover:text-blue-300">
+                            <i class="fas fa-download text-[10px] mr-1"></i> 下载最新结果
+                        </button>
+                        <button id="submitEditBtn" type="button" class="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-[12px] font-semibold shadow-md shadow-blue-500/40">
+                            <i class="fas fa-magic text-[11px] mr-1"></i> 开始编辑
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 复用主站脚本中的通用逻辑（认证 / Toast 等） -->
+    <script src="main.js"></script>
+
+    <script>
+    (function () {
+        'use strict';
+
+        const MAX_FILES = 50;
+        const POLL_INTERVAL_MS = 4000;
+
+        let selectedFiles = [];
+        let currentQueueId = null;
+        let currentQueueData = null;
+        let pollingTimer = null;
+
+        let currentEditingTask = null;
+        let lastEditedResultUrl = null;
+
+        // =========================
+        // 工具函数
+        // =========================
+        function getAuthToken() {
+            return localStorage.getItem('token') || sessionStorage.getItem('token');
+        }
+
+        function ensureAuthOrRedirect() {
+            const token = getAuthToken();
+            if (!token) {
+                if (typeof showErrorToast === 'function') {
+                    showErrorToast('登录状态已失效，请重新登录');
+                }
+                if (typeof handleLogout === 'function') {
+                    handleLogout();
+                } else {
+                    window.location.href = '/login.html';
+                }
+                return false;
+            }
+            return true;
+        }
+
+        function normalizeImageUrl(url) {
+            if (!url) return '';
+            let path = String(url).replace(/\\\\/g, '/');
+            if (path.startsWith('http')) return path;
+            path = path.replace(/^\\.?\\/?public\\//, '/');
+            if (!path.startsWith('/')) path = '/' + path;
+            return path;
+        }
+
+        async function authFetch(url, options = {}) {
+            const token = getAuthToken();
+            if (!token) {
+                ensureAuthOrRedirect();
+                throw new Error('未登录');
+            }
+            const headers = Object.assign({}, options.headers || {}, {
+                'Authorization': 'Bearer ' + token
+            });
+            return fetch(url, Object.assign({}, options, { headers }));
+        }
+
+        function setButtonLoading(button, loading, textWhenIdle) {
+            if (!button) return;
+            if (loading) {
+                button.disabled = true;
+                button.dataset.loading = '1';
+                button.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2 text-xs"></i>处理中...';
+            } else {
+                button.disabled = false;
+                button.dataset.loading = '0';
+                button.innerHTML = textWhenIdle;
+            }
+        }
+
+        function formatDateTime(str) {
+            if (!str) return '';
+            const d = new Date(str);
+            if (Number.isNaN(d.getTime())) return '';
+            return d.toLocaleString();
+        }
+
+        function formatStatus(status) {
+            switch (status) {
+                case 'pending': return { text: '等待中', className: 'status-badge status-pending', icon: 'fa-clock' };
+                case 'processing': return { text: '处理中', className: 'status-badge status-processing', icon: 'fa-spinner' };
+                case 'completed': return { text: '已完成', className: 'status-badge status-completed', icon: 'fa-check-circle' };
+                case 'failed': return { text: '失败', className: 'status-badge status-failed', icon: 'fa-triangle-exclamation' };
+                case 'cancelled': return { text: '已取消', className: 'status-badge status-cancelled', icon: 'fa-ban' };
+                default: return { text: status || '未知', className: 'status-badge status-pending', icon: 'fa-info-circle' };
+            }
+        }
+
+        function truncate(str, len) {
+            if (!str) return '';
+            return str.length > len ? str.slice(0, len) + '…' : str;
+        }
+
+        async function downloadImageAsFile(url, fallbackName) {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error('图片下载失败');
+            }
+            const blob = await response.blob();
+            const name = fallbackName || ('image_' + Date.now() + '.png');
+            return new File([blob], name, { type: blob.type || 'image/png' });
+        }
+
+        function updateSelectedFilesUI() {
+            const fileList = document.getElementById('fileList');
+            const fileCountText = document.getElementById('fileCountText');
+
+            if (!fileList || !fileCountText) return;
+
+            fileList.innerHTML = '';
+
+            if (selectedFiles.length === 0) {
+                fileCountText.textContent = '尚未选择图片';
+                return;
+            }
+
+            fileCountText.textContent = '已选择 ' + selectedFiles.length + ' 张图片';
+
+            selectedFiles.forEach((file, index) => {
+                const pill = document.createElement('div');
+                pill.className = 'file-pill inline-flex items-center gap-2 px-2.5 py-1';
+                pill.innerHTML = `
+                    <i class="fas fa-image text-[11px] text-gray-300"></i>
+                    <span class="text-[11px] text-gray-100">${truncate(file.name, 18)}</span>
+                    <span class="text-[10px] text-gray-500">${(file.size / 1024 / 1024).toFixed(1)}MB</span>
+                    <button type="button" data-index="${index}" class="ml-1 w-4 h-4 flex items-center justify-center rounded-full bg-white/5 hover:bg-red-500/60 text-[10px] text-gray-300 hover:text-white">
+                        ×
+                    </button>
+                `;
+                fileList.appendChild(pill);
+            });
+
+            fileList.addEventListener('click', function (e) {
+                const target = e.target;
+                if (target.tagName === 'BUTTON' && target.dataset.index !== undefined) {
+                    const idx = parseInt(target.dataset.index, 10);
+                    if (!Number.isNaN(idx)) {
+                        selectedFiles.splice(idx, 1);
+                        updateSelectedFilesUI();
+                    }
+                }
+            }, { once: true });
+        }
+
+        function addFiles(newFiles) {
+            if (!newFiles || newFiles.length === 0) return;
+
+            const imageFiles = Array.from(newFiles).filter(f => f && f.type && f.type.startsWith('image/'));
+
+            if (imageFiles.length === 0) {
+                if (typeof showErrorToast === 'function') {
+                    showErrorToast('请选择图片文件');
+                }
+                return;
+            }
+
+            if (selectedFiles.length + imageFiles.length > MAX_FILES) {
+                if (typeof showErrorToast === 'function') {
+                    showErrorToast('单次最多上传 ' + MAX_FILES + ' 张图片');
+                }
+                imageFiles.splice(MAX_FILES - selectedFiles.length);
+            }
+
+            selectedFiles = selectedFiles.concat(imageFiles);
+            updateSelectedFilesUI();
+        }
+
+        function startPollingIfNeeded() {
+            if (!currentQueueId) return;
+            if (pollingTimer) clearInterval(pollingTimer);
+
+            pollingTimer = setInterval(function () {
+                if (!currentQueueId) return;
+                fetchCurrentQueueStatus(false);
+            }, POLL_INTERVAL_MS);
+        }
+
+        function stopPolling() {
+            if (pollingTimer) {
+                clearInterval(pollingTimer);
+                pollingTimer = null;
+            }
+        }
+
+        // =========================
+        // 队列与任务渲染
+        // =========================
+        function renderCurrentQueue(data) {
+            currentQueueData = data;
+            const queue = data && data.queue;
+            const tasks = data && data.tasks ? data.tasks : [];
+
+            const nameEl = document.getElementById('currentBatchName');
+            const badgeEl = document.getElementById('currentQueueStatusBadge');
+            const progressSection = document.getElementById('progressSection');
+            const progressBar = document.getElementById('progressBar');
+            const progressSummaryText = document.getElementById('progressSummaryText');
+            const statTotal = document.getElementById('statTotal');
+            const statProcessing = document.getElementById('statProcessing');
+            const statCompleted = document.getElementById('statCompleted');
+            const statFailed = document.getElementById('statFailed');
+            const refreshBtn = document.getElementById('refreshCurrentQueueBtn');
+            const cancelBtn = document.getElementById('cancelQueueBtn');
+
+            if (!queue) {
+                if (nameEl) nameEl.textContent = '尚未创建批量任务。';
+                if (progressSection) progressSection.classList.add('hidden');
+                if (badgeEl) badgeEl.classList.add('hidden');
+                if (refreshBtn) refreshBtn.classList.add('hidden');
+                if (cancelBtn) cancelBtn.classList.add('hidden');
+                renderTasks([]);
+                return;
+            }
+
+            if (nameEl) {
+                const created = formatDateTime(queue.created_at);
+                nameEl.textContent = (queue.batch_name || ('批量队列 #' + queue.id)) + (created ? (' · 创建于 ' + created) : '');
+            }
+
+            const statusInfo = formatStatus(queue.status);
+            if (badgeEl) {
+                badgeEl.className = statusInfo.className;
+                badgeEl.innerHTML = '<i class="fas ' + statusInfo.icon + ' text-[10px]"></i><span>' + statusInfo.text + '</span>';
+                badgeEl.classList.remove('hidden');
+            }
+
+            const total = queue.total_images || 0;
+            const completed = queue.completed_images || 0;
+            const failed = queue.failed_images || 0;
+            const processing = tasks.filter(t => t.status === 'processing').length;
+            const finished = completed + failed;
+
+            const progress = total > 0 ? Math.round((finished / total) * 100) : 0;
+
+            if (progressSection) progressSection.classList.remove('hidden');
+            if (progressBar) progressBar.style.width = progress + '%';
+            if (progressSummaryText) progressSummaryText.textContent = finished + ' / ' + total + ' (' + progress + '%)';
+            if (statTotal) statTotal.textContent = total;
+            if (statProcessing) statProcessing.textContent = processing;
+            if (statCompleted) statCompleted.textContent = completed;
+            if (statFailed) statFailed.textContent = failed;
+
+            if (refreshBtn) refreshBtn.classList.remove('hidden');
+
+            const isTerminal = ['completed', 'failed', 'cancelled'].includes(queue.status);
+            if (cancelBtn) {
+                if (isTerminal) {
+                    cancelBtn.classList.add('hidden');
+                } else {
+                    cancelBtn.classList.remove('hidden');
+                }
+            }
+
+            renderTasks(tasks);
+
+            if (isTerminal) {
+                stopPolling();
+            } else {
+                startPollingIfNeeded();
+            }
+        }
+
+        function renderTasks(tasks) {
+            const container = document.getElementById('tasksContainer');
+            const summaryEl = document.getElementById('taskSummary');
+
+            if (!container || !summaryEl) return;
+
+            container.innerHTML = '';
+
+            if (!tasks || tasks.length === 0) {
+                summaryEl.textContent = '暂无任务';
+                const placeholder = document.createElement('div');
+                placeholder.className = 'col-span-full text-[12px] text-gray-400 py-10 text-center border border-dashed border-white/10 rounded-xl';
+                placeholder.innerHTML = '<i class="fas fa-info-circle mr-1 text-gray-500"></i> 当前队列暂无可展示的任务。';
+                container.appendChild(placeholder);
+                return;
+            }
+
+            summaryEl.textContent = '共 ' + tasks.length + ' 条任务';
+
+            tasks.forEach(task => {
+                const card = document.createElement('div');
+                card.className = 'component-tertiary rounded-xl overflow-hidden border border-white/10';
+
+                const statusInfo = formatStatus(task.status);
+                const originalUrl = normalizeImageUrl(task.original_image_url);
+                const generatedUrl = normalizeImageUrl(task.generated_image_url);
+
+                const isCompleted = task.status === 'completed';
+                const isFailed = task.status === 'failed';
+
+                card.innerHTML = `
+                    <div class="flex gap-3 p-3 border-b border-white/5">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <span class="px-1.5 py-0.5 rounded bg-black/40 text-[10px] font-mono text-gray-400 border border-white/10">
+                                        #${task.id}
+                                    </span>
+                                    <p class="text-[11px] text-gray-300 truncate" title="${task.original_filename || ''}">
+                                        ${task.original_filename || '未命名图片'}
+                                    </p>
+                                </div>
+                                <span class="${statusInfo.className}">
+                                    <i class="fas ${statusInfo.icon} text-[10px]"></i>
+                                    <span>${statusInfo.text}</span>
+                                </span>
+                            </div>
+                            <p class="mt-1 text-[11px] text-gray-500 line-clamp-2" title="${task.prompt || ''}">
+                                ${task.prompt || '无提示词'}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 p-3 bg-black/40">
+                        <div class="rounded-lg overflow-hidden bg-black/60 flex items-center justify-center">
+                            ${originalUrl ? `<img src="${originalUrl}" alt="原始图片" class="w-full h-28 object-cover">`
+                                          : `<div class="w-full h-28 flex items-center justify-center text-[11px] text-gray-500">无原始图</div>`}
+                        </div>
+                        <div class="rounded-lg overflow-hidden bg-black/60 flex items-center justify-center">
+                            ${
+                                isCompleted && generatedUrl
+                                    ? `<img src="${generatedUrl}" alt="生成结果" class="w-full h-28 object-cover">`
+                                    : `<div class="w-full h-28 flex items-center justify-center text-[11px] text-gray-500">
+                                            ${task.status === 'processing' ? '渲染中…' : '尚未生成结果'}
+                                       </div>`
+                            }
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between gap-2 px-3 py-2.5 bg-black/60 border-t border-white/10">
+                        <div class="flex flex-col gap-0.5 text-[10px] text-gray-500">
+                            <span>创建时间：${formatDateTime(task.created_at) || '-'}</span>
+                            <span>完成时间：${formatDateTime(task.completed_at) || '-'}</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            ${
+                                isFailed && task.error_message
+                                    ? `<button type="button" class="px-2 py-1 rounded-lg bg-red-500/10 text-[10px] text-red-300 border border-red-500/40 cursor-default" title="${task.error_message}">
+                                           <i class="fas fa-circle-exclamation text-[9px] mr-1"></i> 查看错误
+                                       </button>`
+                                    : ''
+                            }
+                            ${
+                                isFailed
+                                    ? `<button type="button" data-task-id="${task.id}" class="retry-task-btn px-2.5 py-1 rounded-lg bg-amber-500/10 text-[10px] text-amber-200 border border-amber-500/40 hover:bg-amber-500/20">
+                                           <i class="fas fa-arrow-rotate-right text-[9px] mr-1"></i> 重试
+                                       </button>`
+                                    : ''
+                            }
+                            ${
+                                isCompleted && generatedUrl
+                                    ? `<button type="button" data-download-url="${generatedUrl}" data-name="${encodeURIComponent(task.original_filename || '')}"
+                                                class="download-task-btn px-2.5 py-1 rounded-lg bg-emerald-500/10 text-[10px] text-emerald-200 border border-emerald-500/40 hover:bg-emerald-500/20">
+                                           <i class="fas fa-download text-[9px] mr-1"></i> 下载
+                                       </button>`
+                                    : ''
+                            }
+                            ${
+                                isCompleted
+                                    ? `<button type="button" data-task-id="${task.id}" class="edit-task-btn px-2.5 py-1 rounded-lg bg-blue-500/10 text-[10px] text-blue-200 border border-blue-500/40 hover:bg-blue-500/20">
+                                           <i class="fas fa-pen text-[9px] mr-1"></i> 编辑
+                                       </button>`
+                                    : ''
+                            }
+                        </div>
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+
+            // 绑定按钮事件（事件委托）
+            container.addEventListener('click', function (e) {
+                const retryBtn = e.target.closest('.retry-task-btn');
+                const downloadBtnEl = e.target.closest('.download-task-btn');
+                const editBtn = e.target.closest('.edit-task-btn');
+
+                if (retryBtn && retryBtn.dataset.taskId) {
+                    const taskId = retryBtn.dataset.taskId;
+                    handleRetryTask(taskId);
+                }
+
+                if (downloadBtnEl && typeof downloadImage === 'function') {
+                    const url = downloadBtnEl.dataset.downloadUrl;
+                    const name = decodeURIComponent(downloadBtnEl.dataset.name || '');
+                    downloadImage(url, name || 'batch_image');
+                }
+
+                if (editBtn && editBtn.dataset.taskId && currentQueueData && Array.isArray(currentQueueData.tasks)) {
+                    const taskId = parseInt(editBtn.dataset.taskId, 10);
+                    const task = currentQueueData.tasks.find(t => t.id === taskId);
+                    if (task) {
+                        openEditModal(task);
+                    }
+                }
+            }, { once: true });
+        }
+
+        function renderQueues(queues) {
+            const listEl = document.getElementById('queuesList');
+            if (!listEl) return;
+
+            listEl.innerHTML = '';
+
+            if (!queues || queues.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'text-[11px] text-gray-500 py-4 text-center border border-dashed border-white/10 rounded-xl';
+                empty.innerHTML = '<i class="fas fa-info-circle mr-1 text-gray-500"></i> 暂无历史批次记录';
+                listEl.appendChild(empty);
+                return;
+            }
+
+            queues.forEach(queue => {
+                const item = document.createElement('button');
+                const statusInfo = formatStatus(queue.status);
+
+                const isActive = currentQueueId && Number(currentQueueId) === Number(queue.id);
+
+                item.type = 'button';
+                item.className = 'w-full text-left px-3 py-2 rounded-xl border text-[11px] flex items-center justify-between gap-2 transition-colors ' +
+                    (isActive
+                        ? 'border-blue-500/60 bg-blue-500/10 text-blue-100'
+                        : 'border-white/10 bg-black/40 hover:border-blue-500/60 hover:bg-blue-500/5 text-gray-200');
+
+                const created = formatDateTime(queue.created_at);
+                const finished = (queue.completed_images || 0) + (queue.failed_images || 0);
+                const total = queue.total_images || 0;
+
+                item.innerHTML = `
+                    <div class="flex flex-col gap-0.5 min-w-0">
+                        <div class="flex items-center gap-2 min-w-0">
+                            <span class="font-mono text-[10px] text-gray-400">#${queue.id}</span>
+                            <span class="truncate">${queue.batch_name || '未命名批次'}</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-[10px] text-gray-500">
+                            <span>${created || '-'}</span>
+                            <span>·</span>
+                            <span>${finished}/${total} 张</span>
+                        </div>
+                    </div>
+                    <span class="${statusInfo.className}">
+                        <i class="fas ${statusInfo.icon} text-[9px]"></i>
+                        <span>${statusInfo.text}</span>
+                    </span>
+                `;
+
+                item.addEventListener('click', function () {
+                    currentQueueId = queue.id;
+                    fetchCurrentQueueStatus(true);
+                    renderQueues(queues);
+                });
+
+                listEl.appendChild(item);
+            });
+        }
+
+        // =========================
+        // API 调用
+        // =========================
+        async function fetchQueues() {
+            try {
+                const res = await authFetch((typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : '/api') + '/batch/queues?limit=20');
+                const json = await res.json();
+
+                if (!res.ok || !json.success) {
+                    throw new Error(json.error || '加载历史队列失败');
+                }
+
+                renderQueues(json.data || []);
+            } catch (error) {
+                console.error(error);
+                if (typeof showErrorToast === 'function') {
+                    showErrorToast(error.message || '加载历史队列失败');
+                }
+            }
+        }
+
+        async function fetchCurrentQueueStatus(showToastOnError) {
+            if (!currentQueueId) return;
+            try {
+                const res = await authFetch((typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : '/api') + '/batch/queue/' + currentQueueId);
+                const json = await res.json();
+
+                if (!res.ok || !json.success) {
+                    throw new Error(json.error || '获取队列状态失败');
+                }
+
+                if (json.data) {
+                    renderCurrentQueue(json.data);
+                }
+            } catch (error) {
+                console.error(error);
+                if (showToastOnError && typeof showErrorToast === 'function') {
+                    showErrorToast(error.message || '获取队列状态失败');
+                }
+            }
+        }
+
+        async function fetchPresets() {
+            const selectEl = document.getElementById('presetSelect');
+            if (!selectEl) return;
+
+            const oldValue = selectEl.value;
+            selectEl.innerHTML = '<option value="">加载中...</option>';
+
+            try {
+                const res = await authFetch((typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : '/api') + '/batch/presets');
+                const json = await res.json();
+
+                if (!res.ok || !json.success) {
+                    throw new Error(json.error || '加载预设失败');
+                }
+
+                const presets = json.data || [];
+                selectEl.innerHTML = '<option value="">从预设中选择...</option>';
+
+                presets.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.content || '';
+                    opt.textContent = (p.title || '未命名预设') + (p.category ? (' · ' + p.category) : '');
+                    selectEl.appendChild(opt);
+                });
+
+                if (oldValue && Array.from(selectEl.options).some(o => o.value === oldValue)) {
+                    selectEl.value = oldValue;
+                }
+            } catch (error) {
+                console.error(error);
+                selectEl.innerHTML = '<option value="">预设加载失败</option>';
+                if (typeof showErrorToast === 'function') {
+                    showErrorToast(error.message || '加载预设失败');
+                }
+            }
+        }
+
+        async function createBatchQueue() {
+            const startBtn = document.getElementById('startBatchBtn');
+            const promptInput = document.getElementById('promptInput');
+            const batchNameInput = document.getElementById('batchNameInput');
+
+            if (!ensureAuthOrRedirect()) return;
+
+            if (!promptInput || !promptInput.value.trim()) {
+                if (typeof showErrorToast === 'function') {
+                    showErrorToast('请输入统一提示词');
+                }
+                return;
+            }
+
+            if (selectedFiles.length === 0) {
+                if (typeof showErrorToast === 'function') {
+                    showErrorToast('请至少上传一张图片');
+                }
+                return;
+            }
+
+            if (startBtn && startBtn.dataset.loading === '1') {
+                return;
+            }
+
+            const formData = new FormData();
+            selectedFiles.forEach(file => formData.append('images', file));
+
+            const prompt = promptInput.value.trim();
+            formData.append('prompt', prompt);
+
+            // 使用主站中当前选择的模型
+            if (typeof selectedModel !== 'undefined') {
+                formData.append('model', selectedModel);
+            }
+
+            const batchName = (batchNameInput && batchNameInput.value.trim())
+                ? batchNameInput.value.trim()
+                : '批次_' + new Date().toLocaleString();
+            formData.append('batchName', batchName);
+
+            if (startBtn) {
+                setButtonLoading(startBtn, true, '<span>开始批量生成</span><i class="fas fa-rocket-launch text-sm ml-2"></i>');
+            }
+
+            try {
+                const res = await authFetch((typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : '/api') + '/batch/create', {
+                    method: 'POST',
+                    body: formData
+                });
+                const json = await res.json();
+
+                if (!res.ok || !json.success) {
+                    throw new Error(json.error || '创建批量任务失败');
+                }
+
+                currentQueueId = json.queueId;
+                if (typeof showSuccessToast === 'function') {
+                    showSuccessToast('批量任务已创建，正在排队处理...');
+                }
+
+                // 重置本地文件列表
+                selectedFiles = [];
+                updateSelectedFilesUI();
+
+                // 刷新队列列表与当前队列
+                fetchQueues();
+                fetchCurrentQueueStatus(true);
+            } catch (error) {
+                console.error(error);
+                if (typeof showErrorToast === 'function') {
+                    showErrorToast(error.message || '创建批量任务失败');
+                }
+            } finally {
+                if (startBtn) {
+                    setButtonLoading(startBtn, false, '<span>开始批量生成</span><i class="fas fa-rocket-launch text-sm"></i>');
+                }
+            }
+        }
+
+        async function handleRetryTask(taskId) {
+            if (!ensureAuthOrRedirect()) return;
+            if (!taskId) return;
+
+            if (!window.confirm('确定要重新加入该任务到队列中吗？')) {
+                return;
+            }
+
+            try {
+                const res = await authFetch((typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : '/api') + '/batch/task/' + taskId + '/retry', {
+                    method: 'POST'
+                });
+                const json = await res.json();
+                if (!res.ok || !json.success) {
+                    throw new Error(json.error || '重试任务失败');
+                }
+                if (typeof showSuccessToast === 'function') {
+                    showSuccessToast('任务已重新加入队列');
+                }
+                fetchCurrentQueueStatus(true);
+            } catch (error) {
+                console.error(error);
+                if (typeof showErrorToast === 'function') {
+                    showErrorToast(error.message || '重试任务失败');
+                }
+            }
+        }
+
+        async function cancelCurrentQueue() {
+            if (!ensureAuthOrRedirect()) return;
+            if (!currentQueueId) return;
+
+            if (!window.confirm('确定要取消整个队列吗？未处理的任务将标记为失败。')) {
+                return;
+            }
+
+            try {
+                const res = await authFetch((typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : '/api') + '/batch/queue/' + currentQueueId + '/cancel', {
+                    method: 'POST'
+                });
+                const json = await res.json();
+                if (!res.ok || !json.success) {
+                    throw new Error(json.error || '取消队列失败');
+                }
+                if (typeof showSuccessToast === 'function') {
+                    showSuccessToast('队列已取消');
+                }
+                fetchCurrentQueueStatus(true);
+                fetchQueues();
+            } catch (error) {
+                console.error(error);
+                if (typeof showErrorToast === 'function') {
+                    showErrorToast(error.message || '取消队列失败');
+                }
+            }
+        }
+
+        // =========================
+        // 图片编辑弹窗
+        // =========================
+        function openEditModal(task) {
+            currentEditingTask = task;
+            lastEditedResultUrl = null;
+
+            const modal = document.getElementById('editModal');
+            const originalImg = document.getElementById('editOriginalImage');
+            const generatedImg = document.getElementById('editGeneratedImage');
+            const placeholder = document.getElementById('editPlaceholder');
+            const promptInput = document.getElementById('editPromptInput');
+            const statusText = document.getElementById('editStatusText');
+            const downloadBtn = document.getElementById('downloadEditedImageBtn');
+
+            if (!modal || !originalImg || !generatedImg || !promptInput || !statusText || !downloadBtn) return;
+
+            originalImg.src = normalizeImageUrl(task.original_image_url);
+
+            const genUrl = normalizeImageUrl(task.generated_image_url);
+            if (genUrl) {
+                generatedImg.src = genUrl;
+                generatedImg.classList.remove('hidden');
+                if (placeholder) placeholder.classList.add('hidden');
+            } else {
+                generatedImg.src = '';
+                generatedImg.classList.add('hidden');
+                if (placeholder) placeholder.classList.remove('hidden');
+            }
+
+            promptInput.value = task.prompt || '';
+            statusText.textContent = '编辑生成的图片会作为新作品保存，不会覆盖批量结果。';
+            downloadBtn.classList.add('hidden');
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            const modal = document.getElementById('editModal');
+            if (modal) modal.classList.add('hidden');
+            currentEditingTask = null;
+            lastEditedResultUrl = null;
+        }
+
+        async function submitEdit() {
+            if (!currentEditingTask) return;
+            if (!ensureAuthOrRedirect()) return;
+
+            const promptInput = document.getElementById('editPromptInput');
+            const generatedImg = document.getElementById('editGeneratedImage');
+            const placeholder = document.getElementById('editPlaceholder');
+            const statusText = document.getElementById('editStatusText');
+            const downloadBtn = document.getElementById('downloadEditedImageBtn');
+            const submitBtn = document.getElementById('submitEditBtn');
+
+            if (!promptInput || !statusText || !submitBtn) return;
+
+            const prompt = promptInput.value.trim();
+            if (!prompt) {
+                if (typeof showErrorToast === 'function') {
+                    showErrorToast('请输入编辑提示词');
+                }
+                return;
+            }
+
+            if (submitBtn.dataset.loading === '1') return;
+            setButtonLoading(submitBtn, true, '<i class="fas fa-magic text-[11px] mr-1"></i> 开始编辑');
+
+            try {
+                const imageUrl = normalizeImageUrl(currentEditingTask.original_image_url || currentEditingTask.generated_image_url);
+                const file = await downloadImageAsFile(imageUrl, 'batch_task_' + currentEditingTask.id + '.png');
+
+                // 直接复用主站的 editImage 函数
+                if (typeof editImage !== 'function') {
+                    throw new Error('前端编辑函数未就绪，请刷新页面重试');
+                }
+
+                const result = await editImage(prompt, file);
+                if (!result || !result.success || !result.data) {
+                    throw new Error((result && result.error) || '编辑失败');
+                }
+
+                const url = normalizeImageUrl(result.data.url || result.data.image_url);
+                lastEditedResultUrl = url;
+
+                if (generatedImg) {
+                    generatedImg.src = url;
+                    generatedImg.classList.remove('hidden');
+                }
+                if (placeholder) placeholder.classList.add('hidden');
+                if (downloadBtn) downloadBtn.classList.remove('hidden');
+
+                statusText.textContent = '✅ 编辑完成，新图片已保存到「我的作品」。';
+                if (typeof showSuccessToast === 'function') {
+                    showSuccessToast('编辑完成，已保存到「我的作品」。');
+                }
+            } catch (error) {
+                console.error(error);
+                statusText.textContent = error.message || '编辑失败，请稍后重试';
+                if (typeof showErrorToast === 'function') {
+                    showErrorToast(statusText.textContent);
+                }
+            } finally {
+                setButtonLoading(submitBtn, false, '<i class="fas fa-magic text-[11px] mr-1"></i> 开始编辑');
+            }
+        }
+
+        function downloadEditedImage() {
+            if (!lastEditedResultUrl || typeof downloadImage !== 'function') return;
+            const name = currentEditingTask && currentEditingTask.original_filename
+                ? currentEditingTask.original_filename + '_edited'
+                : 'batch_edited';
+            downloadImage(lastEditedResultUrl, name);
+        }
+
+        // =========================
+        // DOM 初始化与事件绑定
+        // =========================
+        document.addEventListener('DOMContentLoaded', function () {
+            // 登录态校验（与主站逻辑保持一致）
+            try {
+                if (typeof checkAuthStatus === 'function') {
+                    checkAuthStatus();
+                } else {
+                    ensureAuthOrRedirect();
+                }
+            } catch (e) {
+                console.error(e);
+                ensureAuthOrRedirect();
+            }
+
+            if (!ensureAuthOrRedirect()) return;
+
+            const dropArea = document.getElementById('dropArea');
+            const fileInput = document.getElementById('fileInput');
+            const chooseFilesBtn = document.getElementById('chooseFilesBtn');
+            const promptInput = document.getElementById('promptInput');
+            const promptCharCount = document.getElementById('promptCharCount');
+            const clearPromptBtn = document.getElementById('clearPromptBtn');
+            const presetSelect = document.getElementById('presetSelect');
+            const reloadPresetsBtn = document.getElementById('reloadPresetsBtn');
+            const startBatchBtn = document.getElementById('startBatchBtn');
+            const refreshQueuesBtn = document.getElementById('refreshQueuesBtn');
+            const refreshCurrentQueueBtn = document.getElementById('refreshCurrentQueueBtn');
+            const cancelQueueBtn = document.getElementById('cancelQueueBtn');
+            const themeToggle = document.getElementById('themeToggle');
+            const downloadEditedImageBtn = document.getElementById('downloadEditedImageBtn');
+            const closeEditModalBtn = document.getElementById('closeEditModalBtn');
+            const editModalBackdrop = document.getElementById('editModalBackdrop');
+            const submitEditBtn = document.getElementById('submitEditBtn');
+
+            // 主题切换复用主站逻辑
+            if (themeToggle && typeof toggleTheme === 'function') {
+                themeToggle.addEventListener('click', toggleTheme);
+            }
+
+            if (chooseFilesBtn && fileInput) {
+                chooseFilesBtn.addEventListener('click', function () {
+                    fileInput.click();
+                });
+            }
+
+            if (fileInput) {
+                fileInput.addEventListener('change', function (e) {
+                    addFiles(e.target.files);
+                    fileInput.value = '';
+                });
+            }
+
+            if (dropArea) {
+                ['dragenter', 'dragover'].forEach(function (evtName) {
+                    dropArea.addEventListener(evtName, function (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        dropArea.classList.add('drag-over');
+                    });
+                });
+                ['dragleave', 'dragend', 'drop'].forEach(function (evtName) {
+                    dropArea.addEventListener(evtName, function (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (evtName === 'drop') {
+                            const dt = e.dataTransfer;
+                            if (dt && dt.files && dt.files.length > 0) {
+                                addFiles(dt.files);
+                            }
+                        }
+                        dropArea.classList.remove('drag-over');
+                    });
+                });
+                dropArea.addEventListener('click', function () {
+                    if (fileInput) fileInput.click();
+                });
+            }
+
+            if (promptInput && promptCharCount) {
+                promptInput.addEventListener('input', function () {
+                    promptCharCount.textContent = String(promptInput.value.length);
+                });
+            }
+
+            if (clearPromptBtn && promptInput && promptCharCount) {
+                clearPromptBtn.addEventListener('click', function () {
+                    promptInput.value = '';
+                    promptCharCount.textContent = '0';
+                    promptInput.focus();
+                });
+            }
+
+            if (presetSelect && promptInput) {
+                presetSelect.addEventListener('change', function () {
+                    if (!presetSelect.value) return;
+                    const presetText = presetSelect.value;
+                    if (!promptInput.value.trim()) {
+                        promptInput.value = presetText;
+                    } else {
+                        promptInput.value = presetText + '\\n\\n' + promptInput.value.trim();
+                    }
+                    if (promptCharCount) {
+                        promptCharCount.textContent = String(promptInput.value.length);
+                    }
+                });
+            }
+
+            if (reloadPresetsBtn) {
+                reloadPresetsBtn.addEventListener('click', function () {
+                    fetchPresets();
+                });
+            }
+
+            if (startBatchBtn) {
+                startBatchBtn.addEventListener('click', function () {
+                    createBatchQueue();
+                });
+            }
+
+            if (refreshQueuesBtn) {
+                refreshQueuesBtn.addEventListener('click', function () {
+                    fetchQueues();
+                });
+            }
+
+            if (refreshCurrentQueueBtn) {
+                refreshCurrentQueueBtn.addEventListener('click', function () {
+                    fetchCurrentQueueStatus(true);
+                });
+            }
+
+            if (cancelQueueBtn) {
+                cancelQueueBtn.addEventListener('click', function () {
+                    cancelCurrentQueue();
+                });
+            }
+
+            if (closeEditModalBtn) {
+                closeEditModalBtn.addEventListener('click', closeEditModal);
+            }
+            if (editModalBackdrop) {
+                editModalBackdrop.addEventListener('click', closeEditModal);
+            }
+            if (submitEditBtn) {
+                submitEditBtn.addEventListener('click', submitEdit);
+            }
+            if (downloadEditedImageBtn) {
+                downloadEditedImageBtn.addEventListener('click', downloadEditedImage);
+            }
+
+            // 初始化：加载模型列表（由 main.js 负责）、预设和历史队列
+            fetchPresets();
+            fetchQueues();
+        });
+    })();
+    </script>
+</body>
+</html>
+

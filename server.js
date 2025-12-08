@@ -8,13 +8,14 @@ const path = require('path');
 const fs = require('fs');
 require('dotenv').config();
 
-// 从导出的对象中，通过解构赋值只获取 connectDB 函数
-const { connectDB } = require('./config/database'); 
+// 从导出的对象中，通过解构赋值获取数据库相关工具函数
+const { connectDB, ensureDatabaseInitialized } = require('./config/database');
 
 const authRoutes = require('./routes/auth');
 const imageRoutes = require('./routes/image');
 const userRoutes = require('./routes/user');
 const adminRoutes = require('./routes/admin'); // ✅ 【新增】引入管理员路由
+const batchRoutes = require('./routes/batch'); // ✅ 【新增】引入批量图生图路由
 
 const app = express();
 
@@ -24,14 +25,18 @@ app.set('trust proxy', 1);
 
 const PORT = process.env.PORT || 3000;
 
-// 连接数据库
-try {
-  connectDB().catch(error => {
-    console.error('⚠️ 数据库连接失败，某些功能可能不可用:', error.message);
-  });
-} catch (error) {
-  console.error('⚠️ 数据库初始化失败:', error.message);
-}
+const queueService = require('./services/queueService');
+
+// 在应用启动时串行执行：连接数据库 -> 初始化/检查表结构 -> 初始化队列服务
+(async () => {
+  try {
+    await connectDB();
+    await ensureDatabaseInitialized();
+    await queueService.initialize();
+  } catch (error) {
+    console.error('⚠️ 应用启动初始化失败:', error.message || error);
+  }
+})();
 
 // ============== 安全中间件 ==============
 app.use(helmet({
@@ -96,6 +101,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/image', imageRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/admin', adminRoutes); // ✅ 【新增】挂载管理员路由
+app.use('/api/batch', batchRoutes); // ✅ 【新增】挂载批量图生图路由
 
 
 // ============== 健康检查端点 ==============

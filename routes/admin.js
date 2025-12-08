@@ -157,6 +157,18 @@ router.get('/panel', (req, res) => {
                     <span class="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center group-hover:bg-orange-500/20 group-hover:text-orange-400 transition-colors"><i class="fas fa-bullhorn"></i></span>
                     <span class="font-medium">系统公告</span>
                 </button>
+
+                <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wider px-4 mb-2 mt-6">批量功能</div>
+
+                <button onclick="switchTab('batch-config')" id="btn-batch-config" class="nav-item w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all group">
+                    <span class="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center group-hover:bg-cyan-500/20 group-hover:text-cyan-400 transition-colors"><i class="fas fa-cogs"></i></span>
+                    <span class="font-medium">批量配置</span>
+                </button>
+
+                <button onclick="switchTab('batch-monitor')" id="btn-batch-monitor" class="nav-item w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all group">
+                    <span class="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center group-hover:bg-teal-500/20 group-hover:text-teal-400 transition-colors"><i class="fas fa-tasks"></i></span>
+                    <span class="font-medium">任务监控</span>
+                </button>
             </nav>
 
             <div class="p-4 border-t border-white/5">
@@ -291,6 +303,128 @@ router.get('/panel', (req, res) => {
                     </div>
                 </div>
 
+                <!-- 4. 批量配置 -->
+                <div id="batch-config" class="section hidden fade-in space-y-8">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- 并发数配置 -->
+                        <div class="glass-panel rounded-2xl p-8 shadow-2xl">
+                            <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                                <i class="fas fa-tachometer-alt text-cyan-500"></i> 并发数配置
+                            </h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="text-xs font-bold text-gray-400 ml-1">全局并发数 (1-10)</label>
+                                    <input id="concurrencyInput" type="number" min="1" max="10" value="3" class="w-full input-dark rounded-xl px-4 py-3 mt-2">
+                                    <p class="text-xs text-gray-500 mt-2">控制同时处理的图片生成任务数量</p>
+                                </div>
+                                <button onclick="updateConcurrency()" class="w-full py-3 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl font-bold shadow-lg transition-all">
+                                    <i class="fas fa-save mr-2"></i> 保存配置
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 预设提示词管理 -->
+                        <div class="glass-panel rounded-2xl p-8 shadow-2xl">
+                            <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                                <i class="fas fa-magic text-purple-500"></i> 添加预设提示词
+                            </h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="text-xs font-bold text-gray-400 ml-1">标题</label>
+                                    <input id="presetTitle" placeholder="例如：高清增强" class="w-full input-dark rounded-xl px-4 py-3 mt-2">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-bold text-gray-400 ml-1">内容</label>
+                                    <textarea id="presetContent" rows="3" placeholder="提示词内容..." class="w-full input-dark rounded-xl px-4 py-3 mt-2 resize-none"></textarea>
+                                </div>
+                                <button onclick="addPreset()" class="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-bold shadow-lg transition-all">
+                                    <i class="fas fa-plus mr-2"></i> 添加预设
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 预设列表 -->
+                    <div class="glass-panel rounded-2xl overflow-hidden shadow-xl">
+                        <div class="px-6 py-4 border-b border-white/5 bg-white/5 flex justify-between items-center">
+                            <h3 class="font-bold text-white">预设提示词列表</h3>
+                            <button onclick="loadPresets()" class="text-xs text-gray-400 hover:text-white"><i class="fas fa-sync-alt"></i></button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left" id="presetTable">
+                                <thead class="bg-gray-900/50 text-gray-400 uppercase text-xs font-semibold">
+                                    <tr>
+                                        <th class="px-6 py-4">ID</th>
+                                        <th class="px-6 py-4">标题</th>
+                                        <th class="px-6 py-4">内容</th>
+                                        <th class="px-6 py-4">分类</th>
+                                        <th class="px-6 py-4 text-right">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-white/5 text-gray-300 text-sm"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. 任务监控 -->
+                <div id="batch-monitor" class="section hidden fade-in space-y-8">
+                    <!-- 统计卡片 -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <div class="glass-panel rounded-xl p-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs text-gray-400">总队列数</span>
+                                <i class="fas fa-layer-group text-blue-500"></i>
+                            </div>
+                            <div id="stat-total" class="text-2xl font-bold text-white">0</div>
+                        </div>
+                        <div class="glass-panel rounded-xl p-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs text-gray-400">处理中</span>
+                                <i class="fas fa-spinner text-yellow-500"></i>
+                            </div>
+                            <div id="stat-processing" class="text-2xl font-bold text-yellow-500">0</div>
+                        </div>
+                        <div class="glass-panel rounded-xl p-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs text-gray-400">已完成</span>
+                                <i class="fas fa-check-circle text-green-500"></i>
+                            </div>
+                            <div id="stat-completed" class="text-2xl font-bold text-green-500">0</div>
+                        </div>
+                        <div class="glass-panel rounded-xl p-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs text-gray-400">总图片数</span>
+                                <i class="fas fa-images text-purple-500"></i>
+                            </div>
+                            <div id="stat-images" class="text-2xl font-bold text-purple-500">0</div>
+                        </div>
+                    </div>
+
+                    <!-- 队列列表 -->
+                    <div class="glass-panel rounded-2xl overflow-hidden shadow-xl">
+                        <div class="px-6 py-4 border-b border-white/5 bg-white/5 flex justify-between items-center">
+                            <h3 class="font-bold text-white">批量任务队列</h3>
+                            <button onclick="loadBatchQueues()" class="text-xs text-gray-400 hover:text-white"><i class="fas fa-sync-alt"></i></button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left" id="batchQueueTable">
+                                <thead class="bg-gray-900/50 text-gray-400 uppercase text-xs font-semibold">
+                                    <tr>
+                                        <th class="px-6 py-4">队列ID</th>
+                                        <th class="px-6 py-4">用户</th>
+                                        <th class="px-6 py-4">批次名称</th>
+                                        <th class="px-6 py-4">进度</th>
+                                        <th class="px-6 py-4">状态</th>
+                                        <th class="px-6 py-4">创建时间</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-white/5 text-gray-300 text-sm"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </main>
     </div>
@@ -348,12 +482,20 @@ router.get('/panel', (req, res) => {
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             document.getElementById('btn-' + name).classList.add('active');
 
-            const titles = {'users': '用户管理', 'inspirations': '灵感创意库', 'notices': '系统公告中心'};
+            const titles = {
+                'users': '用户管理',
+                'inspirations': '灵感创意库',
+                'notices': '系统公告中心',
+                'batch-config': '批量图生图配置',
+                'batch-monitor': '批量任务监控'
+            };
             document.getElementById('pageTitle').innerText = titles[name];
 
             if(name === 'users') loadUsers();
             if(name === 'inspirations') loadInspirations();
             if(name === 'notices') loadNotices();
+            if(name === 'batch-config') { loadConcurrency(); loadPresets(); }
+            if(name === 'batch-monitor') { loadBatchStats(); loadBatchQueues(); }
         }
 
         // --- 1. 用户逻辑 (MySQL) ---
@@ -461,6 +603,152 @@ router.get('/panel', (req, res) => {
         }
         async function delNotice(id) { if(confirm('删除此公告？')) { await fetch('/api/admin/announcements/'+id, { method:'DELETE', headers:{'Authorization':'Bearer '+TOKEN} }); loadNotices(); } }
 
+        // --- 4. 批量配置逻辑 ---
+        async function loadConcurrency() {
+            try {
+                const res = await fetch('/api/admin/config/concurrency', { headers:{'Authorization':'Bearer '+TOKEN} });
+                const d = await res.json();
+                if(d.success) {
+                    document.getElementById('concurrencyInput').value = d.data.concurrency;
+                }
+            } catch(e) { console.error('加载并发数失败:', e); }
+        }
+
+        async function updateConcurrency() {
+            const concurrency = parseInt(document.getElementById('concurrencyInput').value);
+            if(!concurrency || concurrency < 1 || concurrency > 10) {
+                return alert('并发数必须在1-10之间');
+            }
+            try {
+                const res = await fetch('/api/admin/config/concurrency', {
+                    method:'POST',
+                    headers:{'Content-Type':'application/json','Authorization':'Bearer '+TOKEN},
+                    body: JSON.stringify({ concurrency })
+                });
+                if(res.ok) alert('并发数已更新');
+                else alert('更新失败');
+            } catch(e) { alert('更新失败: ' + e.message); }
+        }
+
+        async function loadPresets() {
+            try {
+                const res = await fetch('/api/admin/presets', { headers:{'Authorization':'Bearer '+TOKEN} });
+                const d = await res.json();
+                const tbody = document.querySelector('#presetTable tbody');
+                if(d.data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-10 text-gray-500">暂无预设</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = d.data.map(p => \`
+                    <tr class="hover:bg-white/5 transition-colors">
+                        <td class="px-6 py-4 font-mono text-xs text-gray-500">\${p.id}</td>
+                        <td class="px-6 py-4 font-medium text-white">\${p.title}</td>
+                        <td class="px-6 py-4 text-sm text-gray-300 max-w-md truncate">\${p.content}</td>
+                        <td class="px-6 py-4 text-xs text-gray-400">\${p.category}</td>
+                        <td class="px-6 py-4 text-right">
+                            <button onclick="delPreset(\${p.id})" class="text-gray-400 hover:text-red-400 text-xs px-3 py-1.5 rounded-lg border border-gray-600 hover:border-red-400 transition-all">
+                                <i class="fas fa-trash mr-1"></i> 删除
+                            </button>
+                        </td>
+                    </tr>
+                \`).join('');
+            } catch(e) { console.error('加载预设失败:', e); }
+        }
+
+        async function addPreset() {
+            const title = document.getElementById('presetTitle').value.trim();
+            const content = document.getElementById('presetContent').value.trim();
+            if(!title || !content) return alert('标题和内容不能为空');
+            try {
+                const res = await fetch('/api/admin/presets', {
+                    method:'POST',
+                    headers:{'Content-Type':'application/json','Authorization':'Bearer '+TOKEN},
+                    body: JSON.stringify({ title, content, category: 'general', sortOrder: 0 })
+                });
+                if(res.ok) {
+                    document.getElementById('presetTitle').value = '';
+                    document.getElementById('presetContent').value = '';
+                    loadPresets();
+                } else {
+                    alert('添加失败');
+                }
+            } catch(e) { alert('添加失败: ' + e.message); }
+        }
+
+        async function delPreset(id) {
+            if(!confirm('确定删除此预设？')) return;
+            try {
+                await fetch('/api/admin/presets/'+id, { method:'DELETE', headers:{'Authorization':'Bearer '+TOKEN} });
+                loadPresets();
+            } catch(e) { alert('删除失败: ' + e.message); }
+        }
+
+        // --- 5. 批量监控逻辑 ---
+        async function loadBatchStats() {
+            try {
+                const res = await fetch('/api/admin/batch/stats', { headers:{'Authorization':'Bearer '+TOKEN} });
+                const d = await res.json();
+                if(d.success) {
+                    const stats = d.data;
+                    document.getElementById('stat-total').innerText = stats.total_queues || 0;
+                    document.getElementById('stat-processing').innerText = stats.processing_queues || 0;
+                    document.getElementById('stat-completed').innerText = stats.completed_queues || 0;
+                    document.getElementById('stat-images').innerText = stats.total_images || 0;
+                }
+            } catch(e) { console.error('加载统计失败:', e); }
+        }
+
+        async function loadBatchQueues() {
+            try {
+                const res = await fetch('/api/admin/batch/queues', { headers:{'Authorization':'Bearer '+TOKEN} });
+                const d = await res.json();
+                const tbody = document.querySelector('#batchQueueTable tbody');
+                if(d.data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-10 text-gray-500">暂无批量任务</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = d.data.map(q => {
+                    const progress = q.total_images > 0 ? Math.round((q.completed_images / q.total_images) * 100) : 0;
+                    const statusColors = {
+                        'pending': 'text-gray-400',
+                        'processing': 'text-yellow-400',
+                        'completed': 'text-green-400',
+                        'failed': 'text-red-400',
+                        'cancelled': 'text-gray-500'
+                    };
+                    const statusText = {
+                        'pending': '等待中',
+                        'processing': '处理中',
+                        'completed': '已完成',
+                        'failed': '失败',
+                        'cancelled': '已取消'
+                    };
+                    return \`
+                        <tr class="hover:bg-white/5 transition-colors">
+                            <td class="px-6 py-4 font-mono text-xs text-gray-500">\${q.id}</td>
+                            <td class="px-6 py-4">
+                                <div class="text-sm text-white">\${q.username}</div>
+                                <div class="text-xs text-gray-500">\${q.email}</div>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-300">\${q.batch_name || '未命名'}</td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-2">
+                                    <div class="flex-1 h-2 bg-gray-700 rounded-full overflow-hidden">
+                                        <div class="h-full bg-blue-500 transition-all" style="width: \${progress}%"></div>
+                                    </div>
+                                    <span class="text-xs text-gray-400 font-mono">\${q.completed_images}/\${q.total_images}</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="text-xs font-medium \${statusColors[q.status]}">\${statusText[q.status]}</span>
+                            </td>
+                            <td class="px-6 py-4 text-xs text-gray-500 font-mono">\${new Date(q.created_at).toLocaleString()}</td>
+                        </tr>
+                    \`;
+                }).join('');
+            } catch(e) { console.error('加载队列失败:', e); }
+        }
+
     </script>
 </body>
 </html>
@@ -509,6 +797,92 @@ router.post('/announcements', authenticateToken, requireAdmin, async (req, res) 
 });
 router.delete('/announcements/:id', authenticateToken, requireAdmin, async (req, res) => {
     try { await pool.execute('DELETE FROM announcements WHERE id = ?', [req.params.id]); res.json({success:true}); } catch(e){res.status(500).json({});}
+});
+
+// ================= 批量图生图管理 APIs =================
+
+// 预设提示词管理
+router.get('/presets', authenticateToken, requireAdmin, async (req, res) => {
+    try { const [rows] = await pool.execute('SELECT * FROM preset_prompts ORDER BY sort_order ASC, id ASC'); res.json({success:true, data:rows}); } catch(e){res.status(500).json({});}
+});
+
+router.post('/presets', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const { title, content, category, sortOrder } = req.body;
+        await pool.execute('INSERT INTO preset_prompts (title, content, category, sort_order) VALUES (?, ?, ?, ?)',
+            [title, content, category || 'general', sortOrder || 0]);
+        res.json({success:true});
+    } catch(e){res.status(500).json({error: e.message});}
+});
+
+router.put('/presets/:id', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const { title, content, category, sortOrder, isActive } = req.body;
+        await pool.execute('UPDATE preset_prompts SET title = ?, content = ?, category = ?, sort_order = ?, is_active = ? WHERE id = ?',
+            [title, content, category, sortOrder, isActive ? 1 : 0, req.params.id]);
+        res.json({success:true});
+    } catch(e){res.status(500).json({error: e.message});}
+});
+
+router.delete('/presets/:id', authenticateToken, requireAdmin, async (req, res) => {
+    try { await pool.execute('DELETE FROM preset_prompts WHERE id = ?', [req.params.id]); res.json({success:true}); } catch(e){res.status(500).json({});}
+});
+
+// 系统配置管理（并发数）
+router.get('/config/concurrency', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const [rows] = await pool.execute('SELECT config_value FROM system_config WHERE config_key = ?', ['batch_concurrency']);
+        const concurrency = rows.length > 0 ? parseInt(rows[0].config_value) : 3;
+        res.json({success:true, data: { concurrency }});
+    } catch(e){res.status(500).json({error: e.message});}
+});
+
+router.post('/config/concurrency', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const { concurrency } = req.body;
+        if (!concurrency || concurrency < 1 || concurrency > 10) {
+            return res.status(400).json({error: '并发数必须在1-10之间'});
+        }
+        await pool.execute('UPDATE system_config SET config_value = ? WHERE config_key = ?',
+            [concurrency.toString(), 'batch_concurrency']);
+
+        // 更新队列服务的并发数
+        const queueService = require('../services/queueService');
+        await queueService.updateConcurrency(concurrency);
+
+        res.json({success:true});
+    } catch(e){res.status(500).json({error: e.message});}
+});
+
+// 批量任务监控
+router.get('/batch/queues', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const [rows] = await pool.execute(`
+            SELECT bq.*, u.username, u.email
+            FROM batch_queues bq
+            JOIN users u ON bq.user_id = u.id
+            ORDER BY bq.created_at DESC
+            LIMIT 50
+        `);
+        res.json({success:true, data:rows});
+    } catch(e){res.status(500).json({error: e.message});}
+});
+
+router.get('/batch/stats', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const [stats] = await pool.execute(`
+            SELECT
+                COUNT(*) as total_queues,
+                SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_queues,
+                SUM(CASE WHEN status = 'processing' THEN 1 ELSE 0 END) as processing_queues,
+                SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_queues,
+                SUM(total_images) as total_images,
+                SUM(completed_images) as completed_images,
+                SUM(failed_images) as failed_images
+            FROM batch_queues
+        `);
+        res.json({success:true, data: stats[0]});
+    } catch(e){res.status(500).json({error: e.message});}
 });
 
 module.exports = router;

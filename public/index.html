@@ -133,6 +133,9 @@
             <div class="flex flex-col items-center space-y-4 w-full">
                 <button id="notificationBtn" class="w-10 h-10 rounded-lg flex items-center justify-center text-gray-400 hover:text-blue-500 transition-colors"><i class="fas fa-bell text-xl"></i></button>
                 <a href="https://api.fengjungpt.com" target="_blank" id="apiButton" class="w-10 h-10 rounded-lg flex items-center justify-center text-gray-400 hover:text-blue-500 transition-colors font-bold text-xs no-underline">API</a>
+                <a href="/batch.html" id="batchPageButton" class="w-10 h-10 rounded-lg flex items-center justify-center text-gray-400 hover:text-blue-500 transition-colors" title="批量图生图">
+                    <i class="fas fa-layer-group text-base"></i>
+                </a>
                 <button id="tutorialBtn" class="w-10 h-10 rounded-lg flex items-center justify-center text-gray-400 hover:text-blue-500 transition-colors"><i class="fas fa-book-open text-base"></i></button>
                 <button id="themeToggle" class="w-10 h-10 rounded-lg flex items-center justify-center text-gray-400 hover:text-blue-500 transition-colors"><i class="fas fa-moon text-xl" id="themeIcon"></i></button>
             </div>
@@ -228,13 +231,19 @@
         <!-- 右侧：灵感页 -->
         <div id="right-content-panel" class="flex-1 theme-transition flex flex-col lg:h-screen relative overflow-hidden lg:flex">
             <div class="p-6 border-b border-custom backdrop-blur-md flex items-center justify-between flex-shrink-0">
-                 <div class="flex rounded-full p-1 border border-custom component-tertiary">
-                    <button id="inspirationTab" class="px-4 lg:px-6 py-2 rounded-full bg-blue-500/10 text-blue-500 text-xs font-bold transition-all flex items-center gap-2">
-                        <i class="fas fa-fire"></i> 灵感
-                    </button>
-                    <button id="myWorksTab" class="px-4 lg:px-6 py-2 rounded-full text-gray-500 hover:text-blue-500 transition-all text-xs font-bold flex items-center gap-2">
-                        <i class="fas fa-folder-open"></i> 我的
-                    </button>
+                 <div class="flex items-center gap-3">
+                    <div class="flex rounded-full p-1 border border-custom component-tertiary">
+                        <button id="inspirationTab" class="px-4 lg:px-6 py-2 rounded-full bg-blue-500/10 text-blue-500 text-xs font-bold transition-all flex items-center gap-2">
+                            <i class="fas fa-fire"></i> 灵感
+                        </button>
+                        <button id="myWorksTab" class="px-4 lg:px-6 py-2 rounded-full text-gray-500 hover:text-blue-500 transition-all text-xs font-bold flex items-center gap-2">
+                            <i class="fas fa-folder-open"></i> 我的
+                        </button>
+                    </div>
+                    <a href="/batch.html" id="batchTabLink" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-blue-500/40 text-[11px] text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 hover:border-blue-400 transition-colors">
+                        <i class="fas fa-layer-group text-xs"></i>
+                        <span>批量图生图</span>
+                    </a>
                 </div>
                 <div class="hidden sm:flex relative">
                      <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs"></i>
