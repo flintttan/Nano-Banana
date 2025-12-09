@@ -346,15 +346,37 @@ class AIService {
     }
   }
 
-  // 获取可用模型
+  // 获取可用模型（优先从环境变量 IMAGE_MODELS 读取）
   async getAvailableModels() {
+    const envModels = process.env.IMAGE_MODELS;
+
+    if (envModels) {
+      try {
+        const parsed = JSON.parse(envModels);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((m) => ({
+            id: m.id,
+            name: m.name || m.id,
+            description: m.description || '',
+            icon: m.icon || '✨'
+          }));
+        }
+      } catch (error) {
+        console.error('IMAGE_MODELS 环境变量解析失败:', error.message);
+      }
+    }
+
+    // 回退到内置模型配置，保证服务可用
     const modelData = {
       'gemini-2.5-flash-image': { name: 'Gemini 2.5 Flash Image', description: '默认生图模型（chat.completions）', icon: '🪐' },
-      'nano-banana': { name: 'Nano Banana', description: '快速生成', icon: '🍌' },
-      'nano-banana-hd': { name: 'Nano Banana HD', description: '高清品质', icon: '🍌✨' },
-      'nano-banana-2': { name: 'Nano Banana 2.0', description: '旗舰模型', icon: '🚀' }
+      'nano-banana': { name: 'Nano Banana', description: '标准模式，生成速度快，适合日常使用', icon: '🍌' },
+      'nano-banana-hd': { name: 'Nano Banana HD', description: '高清模式，增强画质细节', icon: '✨' },
+      'nano-banana-2': { name: 'Nano Banana 2.0', description: '最新一代大模型，极致画质 (支持比例选择)', icon: '🚀' },
+      'nano-banana-2-2k': { name: 'Nano Banana 2.0 (2K)', description: '2K 模式，超清分辨率绘图', icon: '🔷' },
+      'nano-banana-2-4k': { name: 'Nano Banana 2.0 (4K)', description: '4K 模式，极致细节视觉盛宴', icon: '💠' }
     };
-    return Promise.resolve(Object.keys(modelData).map(key => ({ id: key, ...modelData[key] })));
+
+    return Object.keys(modelData).map((key) => ({ id: key, ...modelData[key] }));
   }
 
   formatError(error) {

@@ -66,46 +66,74 @@ document.addEventListener('DOMContentLoaded', () => {
 // 3. 模型管理逻辑 (Model Logic)
 // ==========================================
 
-function loadAvailableModels() {
-    const models = [
-        {
-            id: 'gemini-2.5-flash-image',
-            name: 'Gemini 2.5 Flash Image',
-            icon: '🪐',
-            description: '默认生图模型，基于 /v1/chat/completions 接口，生成速度快'
-        },
-        { 
-            id: 'nano-banana', 
-            name: 'Nano Banana', 
-            icon: '🍌', 
-            description: '标准模式，生成速度快，适合日常使用' 
-        },
-        { 
-            id: 'nano-banana-hd', 
-            name: 'Nano Banana HD', 
-            icon: '✨', 
-            description: '高清模式，增强画质细节' 
-        },
-        { 
-            id: 'nano-banana-2',  
-            name: 'Nano Banana 2.0', 
-            icon: '🚀', 
-            description: '最新一代大模型，极致画质 (支持比例选择)' 
-        },
-        { 
-            id: 'nano-banana-2-2k',  
-            name: 'Nano Banana 2.0 (2K)', 
-            icon: '🔷', 
-            description: '2K 模式，超清分辨率绘图' 
-        },
-        { 
-            id: 'nano-banana-2-4k',  
-            name: 'Nano Banana 2.0 (4K)', 
-            icon: '💠', 
-            description: '4K 模式，极致细节视觉盛宴' 
+// 本地兜底模型列表，后端或环境变量不可用时使用
+const FALLBACK_IMAGE_MODELS = [
+    {
+        id: 'gemini-2.5-flash-image',
+        name: 'Gemini 2.5 Flash Image',
+        icon: '🪐',
+        description: '默认生图模型，基于 /v1/chat/completions 接口，生成速度快'
+    },
+    { 
+        id: 'nano-banana', 
+        name: 'Nano Banana', 
+        icon: '🍌', 
+        description: '标准模式，生成速度快，适合日常使用' 
+    },
+    { 
+        id: 'nano-banana-hd', 
+        name: 'Nano Banana HD', 
+        icon: '✨', 
+        description: '高清模式，增强画质细节' 
+    },
+    { 
+        id: 'nano-banana-2',  
+        name: 'Nano Banana 2.0', 
+        icon: '🚀', 
+        description: '最新一代大模型，极致画质 (支持比例选择)' 
+    },
+    { 
+        id: 'nano-banana-2-2k',  
+        name: 'Nano Banana 2.0 (2K)', 
+        icon: '🔷', 
+        description: '2K 模式，超清分辨率绘图' 
+    },
+    { 
+        id: 'nano-banana-2-4k',  
+        name: 'Nano Banana 2.0 (4K)', 
+        icon: '💠', 
+        description: '4K 模式，极致细节视觉盛宴' 
+    }
+];
+
+async function loadAvailableModels() {
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+
+    // 如果没有 token，退回本地默认模型，避免阻塞页面
+    if (!token) {
+        console.warn('未找到认证信息，使用默认模型列表');
+        updateModelDropdown(FALLBACK_IMAGE_MODELS);
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/image/models`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success || !Array.isArray(result.data) || result.data.length === 0) {
+            throw new Error(result.error || `获取模型列表失败，状态码: ${response.status}`);
         }
-    ];
-    updateModelDropdown(models);
+
+        updateModelDropdown(result.data);
+    } catch (error) {
+        console.error('加载模型列表失败，使用默认模型列表:', error);
+        updateModelDropdown(FALLBACK_IMAGE_MODELS);
+    }
 }
 
 function updateModelDropdown(modelsArray) {
