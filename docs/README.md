@@ -136,7 +136,7 @@
 
 - **项目主页**: https://github.com/flintttan/Nano-Banana
 - **问题反馈**: https://github.com/flintttan/Nano-Banana/issues
-- **AI API 服务**: https://api.fengjungpt.com
+- **AI API 服务**: https://api.openai.com （或其他 OpenAI 兼容服务）
 
 ---
 

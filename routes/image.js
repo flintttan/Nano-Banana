@@ -29,13 +29,47 @@ const authenticateToken = (req, res, next) => {
 
 async function getImageDimensions(imageUrl) {
     try {
-        const response = await axios.get(imageUrl, { responseType: 'arraybuffer', timeout: 10000 });
+        const response = await axios.get(imageUrl, { responseType: 'arraybuffer', timeout: 120000 }); // 最长等 2 分钟 获取尺寸
         const metadata = await sharp(response.data).metadata();
         return `${metadata.width}x${metadata.height}`;
     } catch (error) {
         console.error(`⚠️ 无法获取图片尺寸:`, error.message);
         return null;
     }
+}
+
+// 通用保存图片方法：支持远程 URL 与 data:image;base64,...
+async function saveImageFromSource(temporaryImageUrl, filePath) {
+    if (!temporaryImageUrl) throw new Error('图片地址为空');
+
+    // data:image/...;base64,... 由 chat.completions 返回
+    if (temporaryImageUrl.startsWith('data:image')) {
+        const commaIndex = temporaryImageUrl.indexOf(',');
+        if (commaIndex === -1) throw new Error('无效的图片数据');
+
+        const base64Data = temporaryImageUrl.substring(commaIndex + 1);
+        const buffer = Buffer.from(base64Data, 'base64');
+
+        await fs.promises.writeFile(filePath, buffer);
+
+        try {
+            const metadata = await sharp(buffer).metadata();
+            if (metadata.width && metadata.height) {
+                return `${metadata.width}x${metadata.height}`;
+            }
+        } catch (error) {
+            console.error('⚠️ data URL 获取图片尺寸失败:', error.message);
+        }
+        return null;
+    }
+
+    // 兼容旧逻辑：从远程 URL 下载并尝试获取尺寸
+    const response = await axios({ url: temporaryImageUrl, responseType: 'stream', timeout: 120000 });
+    const writer = fs.createWriteStream(filePath);
+    response.data.pipe(writer);
+    await new Promise((resolve, reject) => { writer.on('finish', resolve); writer.on('error', reject); });
+
+    return await getImageDimensions(temporaryImageUrl);
 }
 
 async function getApiKeyToUse(connection, userId, currentPoints, requiredPoints) {
@@ -110,7 +144,11 @@ router.get('/models', authenticateToken, async (req, res, next) => {
 
 // 文生图
 router.post('/generate', authenticateToken, async (req, res, next) => {
-    console.log('API: /generate');
+    console.log('API: /generate', {
+        userId: req.user?.id,
+        model: req.body?.model,
+        quantity: req.body?.quantity
+    });
     let connection; 
     try {
         const { prompt, model, size, width, height, quantity = '1' } = req.body;
@@ -142,12 +180,7 @@ router.post('/generate', authenticateToken, async (req, res, next) => {
                 const filePath = path.join(uploadsDir, fileName);
                 const publicUrl = `/uploads/${fileName}`;
 
-                const response = await axios({ url: temporaryImageUrl, responseType: 'stream' });
-                const writer = fs.createWriteStream(filePath);
-                response.data.pipe(writer);
-                await new Promise((resolve, reject) => { writer.on('finish', resolve); writer.on('error', reject); });
-
-                let actualSize = await getImageDimensions(temporaryImageUrl);
+                const actualSize = await saveImageFromSource(temporaryImageUrl, filePath);
                 const sizeToSave = actualSize || (width && height ? `${width}x${height}` : (size || null));
 
                 const [insertResult] = await connection.execute('INSERT INTO creations (user_id, prompt, image_url, model, size, created_at) VALUES (?, ?, ?, ?, ?, ?)', [userId, prompt, publicUrl, model || null, sizeToSave, new Date()]);
@@ -176,7 +209,11 @@ router.post('/generate', authenticateToken, async (req, res, next) => {
 
 // 图生图
 router.post('/edit', authenticateToken, upload.array('image', 3), async (req, res, next) => {
-    console.log('API: /edit');
+    console.log('API: /edit', {
+        userId: req.user?.id,
+        model: req.body?.model,
+        imageCount: (req.files && req.files.length) || 0
+    });
     let connection;
     try {
         const { prompt, model, width, height } = req.body;
@@ -214,12 +251,7 @@ router.post('/edit', authenticateToken, upload.array('image', 3), async (req, re
         const filePath = path.join(uploadsDir, fileName);
         const publicUrl = `/uploads/${fileName}`;
 
-        const response = await axios({ url: temporaryImageUrl, responseType: 'stream' });
-        const writer = fs.createWriteStream(filePath);
-        response.data.pipe(writer);
-        await new Promise((resolve, reject) => { writer.on('finish', resolve); writer.on('error', reject); });
-
-        let actualSize = await getImageDimensions(temporaryImageUrl);
+        const actualSize = await saveImageFromSource(temporaryImageUrl, filePath);
         const sizeString = actualSize || (targetWidth && targetHeight ? `${targetWidth}x${targetHeight}` : null);
         
         await connection.execute('INSERT INTO creations (user_id, prompt, image_url, model, size, created_at) VALUES (?, ?, ?, ?, ?, ?)', [userId, prompt, publicUrl, model || null, sizeString, new Date()]);

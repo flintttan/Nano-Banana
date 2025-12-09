@@ -29,7 +29,7 @@ app:
     JWT_SECRET: ${JWT_SECRET:-your_super_secret_jwt_key_change_this_in_production}
 
     # AI API 配置
-    AI_API_BASE_URL: ${AI_API_BASE_URL:-https://api.fengjungpt.com}
+    AI_API_BASE_URL: ${AI_API_BASE_URL:-https://api.openai.com}
     AI_API_KEY: ${AI_API_KEY:-your_api_key_here}
 ```
 
@@ -111,7 +111,7 @@ REDIS_PORT=6379
 JWT_SECRET=$(openssl rand -base64 32)
 
 # AI API 配置（必须配置）
-AI_API_BASE_URL=https://api.fengjungpt.com
+AI_API_BASE_URL=https://api.openai.com
 AI_API_KEY=sk-your-actual-api-key
 
 # 邮箱配置（可选）
@@ -212,7 +212,7 @@ echo "JWT_SECRET=$(openssl rand -base64 32)" >> .env
 
 | 变量名 | 说明 | 示例值 | 是否必需 |
 |--------|------|--------|----------|
-| `AI_API_BASE_URL` | AI API 基础 URL | `https://api.fengjungpt.com` | ❌ |
+| `AI_API_BASE_URL` | AI API 基础 URL | `https://api.openai.com` | ❌ |
 | `AI_API_KEY` | AI API 密钥 | `sk-xxxxxxxx` | ✅ |
 
 ### 邮箱配置

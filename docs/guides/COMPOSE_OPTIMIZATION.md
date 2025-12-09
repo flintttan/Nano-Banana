@@ -158,7 +158,7 @@ MYSQL_PORT=3306
 JWT_SECRET=bG9uZ19yYW5kb21fam10X2tleV9mb3Igc2VjdXJpdHk=
 
 # AI API 配置
-AI_API_BASE_URL=https://api.fengjungpt.com
+AI_API_BASE_URL=https://api.openai.com
 AI_API_KEY=sk-your-actual-api-key-here
 ```
 

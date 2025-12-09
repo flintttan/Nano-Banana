@@ -111,9 +111,9 @@ interactive_config() {
     # AI API 配置
     echo ""
     echo "=== AI API 配置 ==="
-    print_warning "AI_API_KEY 是必需的，请访问 https://api.fengjungpt.com 获取"
-    read -p "AI API 基础 URL [https://api.fengjungpt.com]: " AI_API_BASE_URL
-    AI_API_BASE_URL=${AI_API_BASE_URL:-https://api.fengjungpt.com}
+    print_warning "AI_API_KEY 是必需的，请访问 OpenAI 或兼容服务提供商获取"
+    read -p "AI API 基础 URL [https://api.openai.com]: " AI_API_BASE_URL
+    AI_API_BASE_URL=${AI_API_BASE_URL:-https://api.openai.com}
 
     read -p "AI API Key: " AI_API_KEY
 

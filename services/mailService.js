@@ -12,6 +12,11 @@ const transporter = nodemailer.createTransport({
     }
 });
 
+// 统一品牌名称配置：用于邮件内容、标题等展示
+const MAIL_BRAND_NAME = process.env.MAIL_BRAND_NAME || 'Nano Banana';
+// 发件人邮箱头: 优先使用 MAIL_FROM（完整的 `名称 <邮箱>`），否则使用品牌名 + 官方后缀
+const MAIL_FROM_HEADER = process.env.MAIL_FROM || `"${MAIL_BRAND_NAME} 官方" <${process.env.MAIL_USER}>`;
+
 /**
  * 发送验证码邮件
  * @param {string} toEmail - 接收者邮箱
@@ -20,14 +25,14 @@ const transporter = nodemailer.createTransport({
 exports.sendVerificationEmail = async (toEmail, code) => {
     // 邮件内容配置
     const mailOptions = {
-        from: `"Nano Banana 官方" <${process.env.MAIL_USER}>`, // 发件人必须和认证账号一致
+        from: MAIL_FROM_HEADER, // 发件人必须和认证账号一致
         to: toEmail,
-        subject: '【Nano Banana】您的注册验证码',
+        subject: `【${MAIL_BRAND_NAME}】您的注册验证码`,
         html: `
             <div style="background-color:#f3f4f6; padding: 20px; font-family: sans-serif;">
                 <div style="max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                     <div style="background: linear-gradient(to right, #8B5CF6, #3B82F6); padding: 20px; text-align: center;">
-                        <h1 style="color: #ffffff; margin: 0; font-size: 20px;">Nano Banana</h1>
+                        <h1 style="color: #ffffff; margin: 0; font-size: 20px;">${MAIL_BRAND_NAME}</h1>
                     </div>
                     <div style="padding: 30px; text-align: center; color: #374151;">
                         <p style="margin-bottom: 20px; font-size: 16px;">欢迎注册！您的验证码是：</p>

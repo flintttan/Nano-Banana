@@ -47,7 +47,7 @@ app.use(helmet({
       // 在 script-src 中添加 'unsafe-inline' 来允许执行内联脚本
       scriptSrc: ["'self'", "https://cdn.tailwindcss.com", "'unsafe-inline'"],
       imgSrc: ["'self'", "data:", "https:", "picsum.photos"],
-      connectSrc: ["'self'", "https://api.fengjungpt.com"],
+      connectSrc: ["'self'", process.env.AI_API_BASE_URL || "https://api.openai.com"],
     },
   },
 }));
