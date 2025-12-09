@@ -146,14 +146,14 @@ function updateModelDropdown(modelsArray) {
     for (const modelInfo of modelsArray) {
         const icon = modelInfo.icon || '✨';
         dropdownHTML += `
-        <button class="w-full text-left px-3 py-3 rounded-lg flex items-center space-x-3 model-select-button hover:bg-blue-500/10 group transition-colors" 
-                data-model-id="${modelInfo.id}" 
-                data-model-name="${modelInfo.name}" 
+        <button class="w-full text-left px-3 py-3 rounded-lg flex items-center space-x-3 model-select-button hover:bg-orange-500/10 group transition-colors"
+                data-model-id="${modelInfo.id}"
+                data-model-name="${modelInfo.name}"
                 data-model-icon="${icon}">
             <span class="text-2xl group-hover:scale-110 transition-transform">${icon}</span>
             <div>
-                <div class="font-bold text-sm group-hover:text-blue-500 transition-colors">${modelInfo.name}</div>
-                <div class="text-[10px] text-gray-400 group-hover:text-blue-400/70">${modelInfo.description}</div>
+                <div class="font-bold text-sm group-hover:text-orange-500 transition-colors">${modelInfo.name}</div>
+                <div class="text-[10px] text-gray-400 group-hover:text-orange-400/70">${modelInfo.description}</div>
             </div>
         </button>`;
     }
@@ -240,8 +240,8 @@ async function handleGenerateClick(e) {
     // 2.1 PC端 Tab 样式切换
     if (myWorksTab && inspirationTab) {
         // 直接切换样式，而不是模拟点击，避免触发不必要的逻辑
-        myWorksTab.className = "px-4 lg:px-6 py-2 rounded-full bg-blue-500/10 text-blue-500 text-xs font-bold transition-all flex items-center gap-2";
-        inspirationTab.className = "px-4 lg:px-6 py-2 rounded-full text-gray-500 hover:text-blue-500 transition-all text-xs font-bold flex items-center gap-2";
+        myWorksTab.className = "px-4 lg:px-6 py-2 rounded-full bg-orange-500/10 text-orange-500 text-xs font-bold transition-all flex items-center gap-2";
+        inspirationTab.className = "px-4 lg:px-6 py-2 rounded-full text-gray-500 hover:text-orange-500 transition-all text-xs font-bold flex items-center gap-2";
     }
     // 更新标题
     const galleryTitle = document.getElementById('galleryTitle');
@@ -261,7 +261,7 @@ async function handleGenerateClick(e) {
             
             // 更新顶部 Tab 样式
             if (mobileTabInspire && mobileTabCreate) {
-                const activeClass = "flex-1 py-1.5 text-xs font-bold rounded-full shadow-sm bg-blue-600 text-white transition-all duration-300 flex items-center justify-center gap-1";
+                const activeClass = "flex-1 py-1.5 text-xs font-bold rounded-full shadow-sm bg-orange-500 text-white transition-all duration-300 flex items-center justify-center gap-1";
                 const inactiveClass = "flex-1 py-1.5 text-xs font-medium rounded-full text-gray-400 hover:text-gray-200 transition-all duration-300 flex items-center justify-center gap-1";
                 mobileTabInspire.className = activeClass;
                 mobileTabCreate.className = inactiveClass;
@@ -347,33 +347,33 @@ function createGeneratingCard() {
         style.id = styleId;
         style.textContent = `
             @keyframes nano-spin { to { transform: rotate(360deg); } }
-            @keyframes nano-pulse { 0%, 100% { opacity: 0.6; transform: scale(0.95); } 50% { opacity: 1; transform: scale(1.05); text-shadow: 0 0 15px rgba(168, 85, 247, 0.6); } }
+            @keyframes nano-pulse { 0%, 100% { opacity: 0.6; transform: scale(0.95); } 50% { opacity: 1; transform: scale(1.05); text-shadow: 0 0 15px rgba(249, 115, 22, 0.6); } }
             @keyframes nano-shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
-            .nano-glass-card { background: rgba(20, 20, 20, 0.6) !important; backdrop-filter: blur(20px) !important; border: 1px solid rgba(255, 255, 255, 0.08) !important; box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.6) !important; }
-            .nano-loader-ring { width: 100%; height: 100%; border-radius: 50%; border: 2px solid transparent; border-top-color: #a855f7; border-right-color: #3b82f6; animation: nano-spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite; filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.4)); }
+            .nano-glass-card { background: rgba(255, 255, 255, 0.9) !important; backdrop-filter: blur(20px) !important; border: 1px solid rgba(249, 115, 22, 0.2) !important; box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.1) !important; }
+            .nano-loader-ring { width: 100%; height: 100%; border-radius: 50%; border: 2px solid transparent; border-top-color: #F97316; border-right-color: #EA580C; animation: nano-spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite; filter: drop-shadow(0 0 8px rgba(249, 115, 22, 0.4)); }
         `;
         document.head.appendChild(style);
     }
 
     card.innerHTML = `
-        <div class="component-tertiary rounded-xl overflow-hidden nano-glass-card relative group" 
+        <div class="component-tertiary rounded-xl overflow-hidden nano-glass-card relative group"
              style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 400px; padding: 2rem; text-align: center;">
-            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-tr from-purple-900/20 to-blue-900/20 rounded-full blur-[60px] pointer-events-none"></div>
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-tr from-orange-900/20 to-orange-600/20 rounded-full blur-[60px] pointer-events-none"></div>
             <div class="relative w-24 h-24 mb-10 flex items-center justify-center">
                 <div class="absolute inset-0 nano-loader-ring"></div>
-                <div class="absolute inset-3 border border-white/5 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center shadow-inner">
-                    <i class="fas fa-layer-group text-3xl text-transparent bg-clip-text bg-gradient-to-br from-purple-400 to-blue-400 relative z-10" style="animation: nano-pulse 2s ease-in-out infinite;"></i>
+                <div class="absolute inset-3 border border-white/5 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center shadow-inner">
+                    <i class="fas fa-layer-group text-3xl text-transparent bg-clip-text bg-gradient-to-br from-orange-400 to-orange-600 relative z-10" style="animation: nano-pulse 2s ease-in-out infinite;"></i>
                 </div>
             </div>
             <div class="relative z-10 space-y-3">
-                <h3 class="text-xl font-bold text-white tracking-wide">云端算力正在渲染...</h3>
-                <div class="flex items-center justify-center gap-2 text-[10px] text-blue-200/50 font-mono uppercase tracking-[0.2em]">
+                <h3 class="text-xl font-bold text-gray-800 tracking-wide">云端算力正在渲染...</h3>
+                <div class="flex items-center justify-center gap-2 text-[10px] text-gray-600/70 font-mono uppercase tracking-[0.2em]">
                     <span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
                     GENERATING /// GPU ACTIVE
                 </div>
             </div>
             <div class="absolute bottom-0 left-0 w-full h-[2px] bg-gray-800/50 overflow-hidden">
-                <div class="h-full bg-gradient-to-r from-transparent via-purple-500 to-transparent w-2/3 opacity-80" style="animation: nano-shimmer 2s infinite linear;"></div>
+                <div class="h-full bg-gradient-to-r from-transparent via-orange-500 to-transparent w-2/3 opacity-80" style="animation: nano-shimmer 2s infinite linear;"></div>
             </div>
         </div>
     `;
@@ -490,15 +490,15 @@ function initializeEventListeners() {
         const debouncedLoadMyWorks = debounce(fetchAndDisplayMyWorks, 300);
 
         inspirationTab.addEventListener('click', () => {
-             inspirationTab.className = "px-4 lg:px-6 py-2 rounded-full bg-blue-500/10 text-blue-500 text-xs font-bold transition-all flex items-center gap-2";
-             myWorksTab.className = "px-4 lg:px-6 py-2 rounded-full text-gray-500 hover:text-blue-500 transition-all text-xs font-bold flex items-center gap-2";
+             inspirationTab.className = "px-4 lg:px-6 py-2 rounded-full bg-orange-500/10 text-orange-500 text-xs font-bold transition-all flex items-center gap-2";
+             myWorksTab.className = "px-4 lg:px-6 py-2 rounded-full text-gray-500 hover:text-orange-500 transition-all text-xs font-bold flex items-center gap-2";
              if (galleryTitle) galleryTitle.innerText = "创意灵感库";
-             debouncedLoadInspirations(); 
+             debouncedLoadInspirations();
         });
 
         myWorksTab.addEventListener('click', () => {
-             myWorksTab.className = "px-4 lg:px-6 py-2 rounded-full bg-blue-500/10 text-blue-500 text-xs font-bold transition-all flex items-center gap-2";
-             inspirationTab.className = "px-4 lg:px-6 py-2 rounded-full text-gray-500 hover:text-blue-500 transition-all text-xs font-bold flex items-center gap-2";
+             myWorksTab.className = "px-4 lg:px-6 py-2 rounded-full bg-orange-500/10 text-orange-500 text-xs font-bold transition-all flex items-center gap-2";
+             inspirationTab.className = "px-4 lg:px-6 py-2 rounded-full text-gray-500 hover:text-orange-500 transition-all text-xs font-bold flex items-center gap-2";
              if (galleryTitle) galleryTitle.innerText = "我的创作历史";
              debouncedLoadMyWorks();
         });
@@ -547,11 +547,6 @@ function initializeEventListeners() {
         document.getElementById('advancedIcon').classList.toggle('rotate-180');
     });
 
-    const themeToggle = document.getElementById('themeToggle');
-    if (themeToggle) {
-        themeToggle.addEventListener('click', toggleTheme);
-    }
-    
     initializeKeyboardShortcuts();
 
     const notificationBtn = document.getElementById('notificationBtn');
@@ -659,18 +654,18 @@ function createWorkCard(imageData) {
     const imgUrl = window.fixImageUrl ? window.fixImageUrl(imageData.image_url || imageData.url) : (imageData.image_url || imageData.url);
 
     card.innerHTML = `
-        <div class="component-tertiary rounded-xl overflow-hidden hover:ring-2 hover:ring-blue-500/50 transition-all duration-300 shadow-lg border border-white/5 flex flex-col h-full bg-[#1e1e1e]">
-            <div class="relative w-full bg-gray-900/50 group/image overflow-hidden" style="${aspectRatioStyle}">
+        <div class="component-tertiary rounded-xl overflow-hidden hover:ring-2 hover:ring-orange-500/50 transition-all duration-300 shadow-lg border border-gray-200 flex flex-col h-full bg-white">
+            <div class="relative w-full bg-gray-50 group/image overflow-hidden" style="${aspectRatioStyle}">
                 <img src="${imgUrl}" alt="AI Image" class="w-full h-full object-contain transition-transform duration-700 group-hover/image:scale-105" loading="lazy">
-                <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover/image:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                <div class="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover/image:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
             </div>
             <div class="p-4 flex flex-col flex-1 gap-3">
-                <h3 class="font-medium text-gray-300 text-xs leading-relaxed line-clamp-2 min-h-[2.5em] select-none" title="${imageData.prompt || ''}">${imageData.prompt || '无标题'}</h3>
-                <div class="h-px w-full bg-white/5"></div>
+                <h3 class="font-medium text-gray-800 text-xs leading-relaxed line-clamp-2 min-h-[2.5em] select-none" title="${imageData.prompt || ''}">${imageData.prompt || '无标题'}</h3>
+                <div class="h-px w-full bg-gray-200"></div>
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
-                        <button class="w-8 h-8 rounded-lg bg-white/5 hover:bg-blue-600 hover:text-white text-gray-400 transition-all flex items-center justify-center download-btn" title="下载原图"><i class="fas fa-download text-xs"></i></button>
-                        <button class="w-8 h-8 rounded-lg bg-white/5 hover:bg-purple-600 hover:text-white text-gray-400 transition-all flex items-center justify-center use-ref-btn" title="作为参考图"><i class="fas fa-magic text-xs"></i></button>
+                        <button class="w-8 h-8 rounded-lg bg-gray-100 hover:bg-orange-600 hover:text-white text-gray-600 transition-all flex items-center justify-center download-btn" title="下载原图"><i class="fas fa-download text-xs"></i></button>
+                        <button class="w-8 h-8 rounded-lg bg-gray-100 hover:bg-orange-600 hover:text-white text-gray-600 transition-all flex items-center justify-center use-ref-btn" title="作为参考图"><i class="fas fa-magic text-xs"></i></button>
                     </div>
                     <button class="w-8 h-8 rounded-lg hover:bg-red-500/20 hover:text-red-400 text-gray-600 transition-all flex items-center justify-center delete-btn" data-id="${imageData.id}" title="删除这张图"><i class="fas fa-trash-alt text-xs"></i></button>
                 </div>
@@ -824,16 +819,6 @@ function handleLogout() {
     localStorage.clear();
     sessionStorage.clear();
     window.location.href = '/login.html';
-}
-
-function toggleTheme() {
-    const body = document.body;
-    const current = body.getAttribute('data-theme') || 'dark';
-    const next = current === 'light' ? 'dark' : 'light';
-    body.setAttribute('data-theme', next);
-    localStorage.setItem('theme', next);
-    const icon = document.getElementById('themeIcon');
-    if(icon) icon.className = next === 'light' ? 'fas fa-sun text-orange-500' : 'fas fa-moon';
 }
 
 function initializeKeyboardShortcuts() {

@@ -1,0 +1,411 @@
+{
+  "project": "Frontend Refactoring - Modern Minimalist SaaS Design System",
+  "created": "2025-12-10",
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "Create Design System Foundation",
+      "description": "Establish CSS design tokens and core component classes",
+      "priority": "HIGH",
+      "estimatedHours": 2,
+      "status": "COMPLETED",
+      "file": "public/styles/design-system.css",
+      "deliverables": [
+        "CSS custom properties for color palette",
+        "Typography scale and font definitions",
+        "Base component classes (card, button, input, badge, nav)",
+        "Utility classes for spacing, colors, shadows",
+        "Animation and transition utilities"
+      ],
+      "dependencies": [],
+      "blocking": []
+    },
+    {
+      "id": "TASK-002",
+      "title": "Refactor index.html - Main Interface",
+      "description": "Transform the main AI drawing interface to new design system",
+      "priority": "HIGH",
+      "estimatedHours": 5,
+      "status": "COMPLETED",
+      "file": "public/index.html",
+      "deliverables": [
+        "Update CSS variables from dark to light theme",
+        "Replace glassmorphism with white cards and shadows",
+        "Update accent color from blue/purple to orange (#F97316)",
+        "Replace Font Awesome icons with Lucide React",
+        "Remove dark mode toggle functionality",
+        "Update masonry grid card styling",
+        "Refresh button gradients to use orange",
+        "Update modal and overlay backgrounds",
+        "Apply generous whitespace and padding"
+      ],
+      "dependencies": ["TASK-001"],
+      "blocking": [],
+      "specificChanges": [
+        {
+          "section": "CSS Variables",
+          "line": "12-23",
+          "change": "Replace --bg-primary: #09090b → #F9FAFB, --accent-blue: #3b82f6 → --accent-orange: #F97316"
+        },
+        {
+          "section": "Component Backgrounds",
+          "line": "31-42",
+          "change": "Remove backdrop-filter, add box-shadow, use solid white backgrounds"
+        },
+        {
+          "section": "Masonry Items",
+          "line": "67-77",
+          "change": "Update hover effects, borders, shadows for white card design"
+        }
+      ]
+    },
+    {
+      "id": "TASK-003",
+      "title": "Refactor login.html - Authentication",
+      "description": "Transform login/register pages to clean, minimalist design",
+      "priority": "HIGH",
+      "estimatedHours": 3.5,
+      "status": "COMPLETED",
+      "file": "public/login.html",
+      "deliverables": [
+        "Remove background image layers and theme switching",
+        "Simplify to single light background (bg-gray-50)",
+        "Transform glass-card to solid white with shadow",
+        "Update form inputs from dark to light styling",
+        "Replace purple gradients with orange (#F97316)",
+        "Remove theme toggle button",
+        "Simplify color scheme for light-only design",
+        "Update button hover states to use orange accent",
+        "Adjust toast notifications for light theme"
+      ],
+      "dependencies": ["TASK-001"],
+      "blocking": [],
+      "specificChanges": [
+        {
+          "section": "Body & Background",
+          "line": "169-178",
+          "change": "Remove bg-layer divs and theme toggle button"
+        },
+        {
+          "section": "Card Styles",
+          "line": "80-95",
+          "change": "Replace glass-card with auth-card using solid white background"
+        },
+        {
+          "section": "Form Inputs",
+          "line": "98-120",
+          "change": "Update custom-input to white background, orange focus state"
+        },
+        {
+          "section": "Logo Icon",
+          "line": "183-184",
+          "change": "Update gradient from from-brand-500 to-blue-600 → from-orange-500 to-orange-600"
+        }
+      ]
+    },
+    {
+      "id": "TASK-004",
+      "title": "Refactor batch.html - Batch Operations",
+      "description": "Apply new design system to batch image generation interface",
+      "priority": "MEDIUM",
+      "estimatedHours": 6,
+      "status": "COMPLETED",
+      "file": "public/batch.html",
+      "deliverables": [
+        "Apply same color palette transformation as index.html",
+        "Update all glassmorphism effects to white surfaces with shadows",
+        "Replace purple/blue accents with warm orange",
+        "Update control panels and form elements",
+        "Refresh table/data display components",
+        "Update batch operation buttons and controls",
+        "Ensure consistency with main interface design",
+        "Update progress indicators and status badges",
+        "Adjust file upload areas and drag-drop zones"
+      ],
+      "dependencies": ["TASK-001", "TASK-002"],
+      "blocking": [],
+      "validationRequired": true
+    },
+    {
+      "id": "TASK-005",
+      "title": "Refactor tutorial.html - User Guide",
+      "description": "Apply consistent design to tutorial/documentation page",
+      "priority": "LOW",
+      "estimatedHours": 2.5,
+      "status": "COMPLETED",
+      "file": "public/tutorial.html",
+      "deliverables": [
+        "Update background and surface colors",
+        "Transform card components to white with shadows",
+        "Update navigation and layout elements",
+        "Replace accent colors with orange theme",
+        "Refresh content presentation components",
+        "Ensure readability with new color scheme",
+        "Update code blocks and example containers"
+      ],
+      "dependencies": ["TASK-001"],
+      "blocking": [],
+      "validationRequired": true
+    },
+    {
+      "id": "TASK-006",
+      "title": "Update main.js - JavaScript Compatibility",
+      "description": "Ensure JavaScript compatibility with new design",
+      "priority": "MEDIUM",
+      "estimatedHours": 2.5,
+      "status": "COMPLETED",
+      "file": "public/main.js",
+      "deliverables": [
+        "Remove dark/light theme switching logic",
+        "Update color-related class manipulations",
+        "Remove theme persistence in localStorage",
+        "Update toast notification styling references",
+        "Adjust dynamic class additions for new color scheme",
+        "Update modal and overlay background handling",
+        "Test all interactive features work correctly"
+      ],
+      "dependencies": ["TASK-002", "TASK-003", "TASK-004", "TASK-005"],
+      "blocking": [],
+      "specificChanges": [
+        {
+          "section": "Theme Management",
+          "description": "Remove all theme-related functions and localStorage usage"
+        },
+        {
+          "section": "Toast Notifications",
+          "description": "Update background colors to light theme"
+        },
+        {
+          "section": "Dynamic Classes",
+          "description": "Update blue/purple color classes to orange equivalents"
+        }
+      ]
+    },
+    {
+      "id": "TASK-007",
+      "title": "Cross-Page Integration & Consistency",
+      "description": "Ensure consistent application of design across all pages",
+      "priority": "HIGH",
+      "estimatedHours": 2,
+      "status": "COMPLETED",
+      "deliverables": [
+        "Verify all pages use consistent color palette",
+        "Check typography hierarchy is uniform",
+        "Ensure spacing and padding are consistent",
+        "Validate component styles match design system",
+        "Test navigation between pages works correctly",
+        "Verify logo and branding is consistent"
+      ],
+      "dependencies": ["TASK-002", "TASK-003", "TASK-004", "TASK-005"],
+      "blocking": [],
+      "validationRequired": true
+    },
+    {
+      "id": "TASK-008",
+      "title": "Comprehensive Testing",
+      "description": "Test all pages for functionality and design compliance",
+      "priority": "HIGH",
+      "estimatedHours": 4,
+      "status": "COMPLETED",
+      "deliverables": [
+        "Visual regression testing across all 4 pages",
+        "Functional testing of all interactive elements",
+        "Responsive design testing (mobile, tablet, desktop)",
+        "Accessibility compliance verification (WCAG AA)",
+        "Performance testing and optimization",
+        "Cross-browser testing (Chrome, Firefox, Safari, Edge)",
+        "JavaScript error checking",
+        "Form submission testing",
+        "User flow testing (login → main → batch → tutorial)"
+      ],
+      "dependencies": ["TASK-002", "TASK-003", "TASK-004", "TASK-005", "TASK-006"],
+      "blocking": [],
+      "validationRequired": true,
+      "testingChecklist": {
+        "visual": [
+          "Page background is light gray (#F9FAFB)",
+          "All cards are white with subtle shadows",
+          "Primary text is dark gray (#111827)",
+          "Secondary text is medium gray (#6B7280)",
+          "Accent color is orange (#F97316)",
+          "No glassmorphism effects remain",
+          "No dark mode toggle visible",
+          "Buttons use orange gradient",
+          "Borders are subtle light gray"
+        ],
+        "functional": [
+          "All buttons work correctly",
+          "Form inputs accept text",
+          "Modals open and close",
+          "Navigation works",
+          "Image uploads function",
+          "Gallery displays correctly",
+          "Batch operations work",
+          "User authentication flows work",
+          "No JavaScript errors in console",
+          "Toast notifications appear correctly"
+        ],
+        "responsive": [
+          "Mobile (320px - 768px)",
+          "Tablet (768px - 1024px)",
+          "Desktop (1024px+)",
+          "Large Desktop (1440px+)"
+        ],
+        "accessibility": [
+          "Color contrast meets WCAG AA standards",
+          "Focus states are visible",
+          "All interactive elements are keyboard accessible",
+          "No motion/animations that cause issues",
+          "Text is readable at all sizes"
+        ]
+      }
+    },
+    {
+      "id": "TASK-009",
+      "title": "Performance Optimization",
+      "description": "Optimize CSS delivery and loading performance",
+      "priority": "MEDIUM",
+      "estimatedHours": 2,
+      "status": "COMPLETED",
+      "deliverables": [
+        "Minimize CSS file size",
+        "Remove unused styles",
+        "Optimize image loading",
+        "Reduce JavaScript bundle if needed",
+        "Test page load times",
+        "Optimize for Core Web Vitals"
+      ],
+      "dependencies": ["TASK-002", "TASK-003", "TASK-004", "TASK-005", "TASK-006"],
+      "blocking": [],
+      "validationRequired": true
+    },
+    {
+      "id": "TASK-010",
+      "title": "Documentation Update",
+      "description": "Update project documentation to reflect new design",
+      "priority": "LOW",
+      "estimatedHours": 1,
+      "status": "COMPLETED",
+      "deliverables": [
+        "Update README.md with new design information",
+        "Document color palette and design tokens",
+        "Create component usage guidelines",
+        "Update deployment documentation if needed",
+        "Create migration guide for future developers"
+      ],
+      "dependencies": ["TASK-002", "TASK-003", "TASK-004", "TASK-005"],
+      "blocking": [],
+      "validationRequired": false
+    }
+  ],
+  "summary": {
+    "totalTasks": 10,
+    "completed": 10,
+    "pending": 0,
+    "highPriority": 5,
+    "mediumPriority": 3,
+    "lowPriority": 2,
+    "totalEstimatedHours": 30,
+    "completedHours": 30,
+    "remainingHours": 0,
+    "criticalPath": [
+      "TASK-001",
+      "TASK-002",
+      "TASK-003",
+      "TASK-006",
+      "TASK-008"
+    ],
+    "completionDate": "2025-12-10"
+  },
+  "designSystem": {
+    "colors": {
+      "background": {
+        "page": "#F9FAFB",
+        "surface": "#FFFFFF",
+        "secondary": "#F3F4F6"
+      },
+ {
+        "primary": "#111827      "text":",
+        "secondary": "#6B7280",
+        "tertiary": "#9CA3AF"
+      },
+      "accent": {
+        "primary": "#F97316",
+        "hover": "#EA580C",
+        "light": "#FFEDD5"
+      }
+    },
+    "typography": {
+      "font": "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
+      "scale": ["0.75rem", "0.875rem", "1rem", "1.125rem", "1.25rem", "1.5rem", "1.875rem"],
+      "weights": [400, 500, 600, 700]
+    },
+    "spacing": {
+      "baseUnit": "0.25rem",
+      "scale": ["0.25rem", "0.5rem", "0.75rem", "1rem", "1.5rem", "2rem", "3rem", "4rem"]
+    },
+    "radius": {
+      "sm": "0.25rem",
+      "md": "0.5rem",
+      "lg": "0.75rem",
+      "xl": "1rem",
+      "full": "9999px"
+    },
+    "shadows": {
+      "xs": "0 1px 2px rgba(0, 0, 0, 0.05)",
+      "sm": "0 1px 3px rgba(0, 0, 0, 0.1)",
+      "md": "0 4px 6px rgba(0, 0, 0, 0.07)",
+      "lg": "0 10px 15px rgba(0, 0, 0, 0.1)",
+      "xl": "0 20px 25px rgba(0, 0, 0, 0.1)"
+    }
+  },
+  "filesToModify": [
+    {
+      "path": "public/styles/design-system.css",
+      "status": "CREATED",
+      "description": "Design system foundation with tokens and component classes"
+    },
+    {
+      "path": "public/index.html",
+      "status": "COMPLETED",
+      "description": "Main AI drawing interface - 714 lines",
+      "priority": "HIGH"
+    },
+    {
+      "path": "public/login.html",
+      "status": "COMPLETED",
+      "description": "Authentication pages - 627 lines",
+      "priority": "HIGH"
+    },
+    {
+      "path": "public/batch.html",
+      "status": "COMPLETED",
+      "description": "Batch image generation - 1,404 lines",
+      "priority": "MEDIUM"
+    },
+    {
+      "path": "public/tutorial.html",
+      "status": "COMPLETED",
+      "description": "User guide/tutorial - 391 lines",
+      "priority": "LOW"
+    },
+    {
+      "path": "public/main.js",
+      "status": "COMPLETED",
+      "description": "Shared JavaScript logic",
+      "priority": "MEDIUM"
+    }
+  ],
+  "successCriteria": [
+    "All 4 HTML pages use consistent Modern Minimalist SaaS design",
+    "Color palette matches specification (gray-50 background, white surfaces, orange accents)",
+    "Typography follows Inter font with proper weights and sizes",
+    "Component styles match design system (cards, buttons, badges, navigation)",
+    "Icons switched from Font Awesome to Lucide React (or Font Awesome maintained)",
+    "All interactive elements work correctly",
+    "Responsive design maintained across devices",
+    "Accessibility standards met (color contrast, focus states)",
+    "No JavaScript errors or broken functionality",
+    "Performance maintained or improved"
+  ]
+}

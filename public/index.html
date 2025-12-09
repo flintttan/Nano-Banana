@@ -6,75 +6,85 @@
     <title>Nano Banana - AI 绘图创作工具</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+    <link rel="stylesheet" href="styles/design-system.css">
+
     <style>
         /* ==================== UI 配置 ==================== */
         :root {
-            --bg-primary: #09090b;
-            --bg-secondary: rgba(24, 24, 27, 0.8);
-            --bg-tertiary: rgba(39, 39, 42, 0.6);
-            --border-color: rgba(255, 255, 255, 0.08);
-            --text-primary: #f4f4f5;
-            --text-secondary: #a1a1aa;
-            --accent-blue: #3b82f6;
-            --glass-blur: blur(20px);
-            --btn-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-            --shadow-glow: 0 0 20px rgba(139, 92, 246, 0.15);
+            --bg-primary: #F9FAFB;
+            --bg-secondary: #FFFFFF;
+            --bg-tertiary: #F3F4F6;
+            --border-color: #E5E7EB;
+            --text-primary: #111827;
+            --text-secondary: #6B7280;
+            --accent-orange: #F97316;
+            --glass-blur: none;
+            --btn-gradient: linear-gradient(135deg, #F97316 0%, #EA580C 100%);
+            --shadow-glow: 0 4px 6px rgba(249, 115, 22, 0.15);
         }
 
         body {
             background-color: var(--bg-primary);
             color: var(--text-primary);
-            transition: background-color 0.3s ease, color 0.3s ease;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }
 
         .component-bg {
             background-color: var(--bg-secondary);
-            backdrop-filter: var(--glass-blur);
-            -webkit-backdrop-filter: var(--glass-blur);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             border-right: 1px solid var(--border-color);
         }
 
         .component-tertiary {
             background-color: var(--bg-tertiary);
             border: 1px solid var(--border-color);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
             transition: all 0.2s ease;
         }
 
         .border-custom { border-color: var(--border-color); }
         
         input, textarea, select {
-            background-color: var(--bg-primary);
+            background-color: var(--bg-secondary);
             color: var(--text-primary);
             border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 12px 16px;
         }
         input:focus, textarea:focus, select:focus {
-            border-color: var(--accent-blue);
+            border-color: var(--accent-orange);
             outline: none;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
         }
 
         #generateBtn {
-            background: var(--btn-gradient);
+            background: var(--accent-orange);
             background-size: 200% 200%;
-            box-shadow: var(--shadow-glow);
+            box-shadow: 0 4px 6px rgba(249, 115, 22, 0.15);
             border: none;
+            border-radius: 12px;
+            font-weight: 600;
             animation: gradientMove 3s ease infinite;
         }
         @keyframes gradientMove { 0% {background-position:0% 50%} 50% {background-position:100% 50%} 100% {background-position:0% 50%} }
 
         .masonry-grid { column-count: 3; column-gap: 1rem; }
-        .masonry-item { 
-            break-inside: avoid; 
-            margin-bottom: 1rem; 
-            background: var(--bg-tertiary);
+        .masonry-item {
+            break-inside: avoid;
+            margin-bottom: 1rem;
+            background: var(--bg-secondary);
             border: 1px solid var(--border-color);
-            border-radius: 12px;
+            border-radius: 16px;
             overflow: hidden;
-            transition: transform 0.2s;
-            min-height: 100px; /* 防止高度塌陷 */
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+            min-height: 100px;
         }
-        .masonry-item:hover { transform: translateY(-5px); border-color: var(--accent-blue); }
+        .masonry-item:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-color: var(--accent-orange);
+        }
 
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-thumb { background: var(--text-secondary); opacity: 0.3; border-radius: 4px; }
@@ -103,18 +113,18 @@
         }
     </style>
 </head>
-<body class="theme-transition overflow-hidden" data-theme="dark">
+<body class="overflow-hidden">
     
     <!-- 移动端顶部导航 -->
-    <div class="lg:hidden fixed top-0 left-0 w-full z-[60] px-4 py-3 bg-[#09090b]/95 backdrop-blur-md border-b border-white/5 flex items-center gap-3 transition-all duration-300 shadow-lg">
+    <div class="lg:hidden fixed top-0 left-0 w-full z-[60] px-4 py-3 bg-white/95 backdrop-blur-md border-b border-gray-200 flex items-center gap-3 transition-all duration-300 shadow-lg">
         <button id="mobileMenuButton" class="flex-shrink-0 w-10 h-10 flex items-center justify-center text-gray-400 hover:text-white active:scale-95 transition-all">
             <i class="fas fa-bars text-xl"></i>
         </button>
-        <div class="flex-1 flex p-1 bg-white/5 rounded-full border border-white/5">
-            <button id="mobileTabCreate" class="flex-1 py-1.5 text-xs font-bold rounded-full shadow-sm bg-blue-600 text-white transition-all duration-300 flex items-center justify-center gap-1">
+        <div class="flex-1 flex p-1 bg-gray-100 rounded-full border border-gray-200">
+            <button id="mobileTabCreate" class="flex-1 py-1.5 text-xs font-bold rounded-full shadow-sm bg-orange-500 text-white transition-all duration-300 flex items-center justify-center gap-1">
                 <i class="fas fa-paint-brush text-[10px]"></i> 创作
             </button>
-            <button id="mobileTabInspire" class="flex-1 py-1.5 text-xs font-medium rounded-full text-gray-400 hover:text-gray-200 transition-all duration-300 flex items-center justify-center gap-1">
+            <button id="mobileTabInspire" class="flex-1 py-1.5 text-xs font-medium rounded-full text-gray-500 hover:text-gray-700 transition-all duration-300 flex items-center justify-center gap-1">
                 <i class="fas fa-fire text-[10px]"></i> 灵感
             </button>
         </div>
@@ -127,42 +137,41 @@
     <div id="main-container" class="flex flex-col lg:flex-row h-screen w-full overflow-hidden mobile-scroll-fix pt-[92px] lg:pt-0">
         
         <!-- 左侧菜单 -->
-        <div class="side-nav-container w-20 component-bg flex flex-col items-center py-8 border-r border-custom theme-transition h-full fixed top-0 left-0 z-[100] transition-transform duration-300 -translate-x-full lg:translate-x-0 lg:static lg:transform-none flex-shrink-0 shadow-2xl">
-            <button id="closeSidebarBtn" class="lg:hidden mb-6 w-8 h-8 rounded-full bg-gray-700 text-gray-300 flex items-center justify-center"><i class="fas fa-times"></i></button>
-             <div class="mb-6 text-2xl text-transparent bg-clip-text bg-gradient-to-br from-blue-400 to-purple-600"><i class="fas fa-rocket"></i></div>
+        <div class="side-nav-container w-20 bg-white flex flex-col items-center py-8 border-r border-gray-100 h-full fixed top-0 left-0 z-[100] transition-transform duration-300 -translate-x-full lg:translate-x-0 lg:static lg:transform-none flex-shrink-0 shadow-lg">
+            <button id="closeSidebarBtn" class="lg:hidden mb-6 w-8 h-8 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center"><i class="fas fa-times"></i></button>
+             <div class="mb-6 text-2xl text-transparent bg-clip-text bg-gradient-to-br from-orange-500 to-orange-600"><i class="fas fa-rocket"></i></div>
             <div class="flex flex-col items-center space-y-4 w-full">
-                <button id="notificationBtn" class="w-10 h-10 rounded-lg flex items-center justify-center text-gray-400 hover:text-blue-500 transition-colors"><i class="fas fa-bell text-xl"></i></button>
-                <a href="/batch.html" id="batchPageButton" class="w-10 h-10 rounded-lg flex items-center justify-center text-gray-400 hover:text-blue-500 transition-colors" title="批量图生图">
+                <button id="notificationBtn" class="w-10 h-10 rounded-lg flex items-center justify-center text-gray-400 hover:text-orange-500 transition-colors"><i class="fas fa-bell text-xl"></i></button>
+                <a href="/batch.html" id="batchPageButton" class="w-10 h-10 rounded-lg flex items-center justify-center text-gray-400 hover:text-orange-500 transition-colors" title="批量图生图">
                     <i class="fas fa-layer-group text-base"></i>
                 </a>
-                <button id="themeToggle" class="w-10 h-10 rounded-lg flex items-center justify-center text-gray-400 hover:text-blue-500 transition-colors"><i class="fas fa-moon text-xl" id="themeIcon"></i></button>
             </div>
-            <div class="relative mt-auto pt-6 border-t border-custom w-full flex justify-center">
-                <button id="userButton" class="w-10 h-10 rounded-full overflow-hidden border-2 border-transparent hover:border-blue-500 transition-all">
-                     <div class="w-full h-full bg-gray-700 flex items-center justify-center"><i class="fas fa-user text-white"></i></div>
+            <div class="relative mt-auto pt-6 border-t border-gray-100 w-full flex justify-center">
+                <button id="userButton" class="w-10 h-10 rounded-full overflow-hidden border-2 border-transparent hover:border-orange-500 transition-all">
+                     <div class="w-full h-full bg-gray-200 flex items-center justify-center"><i class="fas fa-user text-gray-600"></i></div>
                 </button>
-                <div id="logoutMenu" class="hidden absolute bottom-0 left-16 mb-2 w-36 rounded-lg component-tertiary shadow-xl z-50 overflow-hidden">
-                    <button id="user-center-button" class="w-full px-4 py-3 text-xs text-left hover:bg-blue-500/10 text-blue-400"><i class="fas fa-id-card mr-2"></i>个人中心</button>
-                    <button id="logout-button" class="w-full px-4 py-3 text-xs text-left hover:bg-red-500/10 text-red-400 border-t border-custom"><i class="fas fa-sign-out-alt mr-2"></i>退出</button>
+                <div id="logoutMenu" class="hidden absolute bottom-0 left-16 mb-2 w-36 rounded-lg bg-white shadow-lg z-50 overflow-hidden border border-gray-200">
+                    <button id="user-center-button" class="w-full px-4 py-3 text-xs text-left hover:bg-orange-50 text-orange-600"><i class="fas fa-id-card mr-2"></i>个人中心</button>
+                    <button id="logout-button" class="w-full px-4 py-3 text-xs text-left hover:bg-red-50 text-red-500 border-t border-gray-100"><i class="fas fa-sign-out-alt mr-2"></i>退出</button>
                 </div>
             </div>
         </div>
 
         <!-- 中间：创作页 -->
-        <div id="control-panel-container" class="w-full lg:w-96 h-full component-bg border-r border-custom flex flex-col theme-transition control-panel relative z-40 flex-shrink-0 shadow-xl lg:flex">
+        <div id="control-panel-container" class="w-full lg:w-96 h-full bg-white border-r border-gray-100 flex flex-col control-panel relative z-40 flex-shrink-0 shadow-lg lg:flex">
             <div class="p-6 space-y-6 overflow-y-auto flex-1 scrollbar-none flex flex-col">
                 <div class="flex items-center justify-between mobile-header-container pl-12 lg:pl-0 flex-shrink-0">
                     <div>
-                        <h1 class="text-xl font-extrabold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">Nano Banana</h1>
+                        <h1 class="text-xl font-extrabold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">Nano Banana</h1>
                         <p class="text-[10px] text-gray-500 tracking-widest uppercase">AI Creative Studio</p>
                     </div>
-                    <span class="text-[10px] px-2 py-1 rounded-full bg-green-500/10 text-green-500 border border-green-500/20 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>在线</span>
+                    <span class="text-[10px] px-2 py-1 rounded-full bg-green-50 text-green-600 border border-green-200 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>在线</span>
                 </div>
 
                 <div class="flex-shrink-0">
                     <label class="text-xs font-bold text-gray-500 mb-2 block uppercase pl-1">AI Model</label>
                     <div class="relative">
-                        <button id="modelSelector" class="w-full component-tertiary rounded-xl px-4 py-3 flex items-center justify-between hover:border-blue-500/50 transition-all text-left">
+                        <button id="modelSelector" class="w-full component-tertiary rounded-xl px-4 py-3 flex items-center justify-between hover:border-orange-500/50 transition-all text-left">
                             <div class="flex items-center space-x-3"><span class="text-2xl">🍌</span><span class="font-medium text-sm">Nano Banana</span></div>
                             <i class="fas fa-chevron-down text-xs text-gray-400"></i>
                         </button>
@@ -172,16 +181,16 @@
                     </div>
                 </div>
 
-                <div class="p-3 lg:p-4 rounded-xl border border-dashed border-custom bg-opacity-50 hover:border-blue-500/50 transition-all flex-shrink-0">
+                <div class="p-3 lg:p-4 rounded-xl border border-dashed border-custom bg-opacity-50 hover:border-orange-500/50 transition-all flex-shrink-0">
                     <div class="flex items-center justify-between mb-2">
-                        <label class="text-[10px] lg:text-xs font-bold text-gray-500 flex items-center gap-2"><i class="fas fa-image text-blue-500"></i> 参考图</label>
-                        <span class="text-[10px] px-2 py-0.5 rounded bg-blue-500/10 text-blue-500">Max 3</span>
+                        <label class="text-[10px] lg:text-xs font-bold text-gray-500 flex items-center gap-2"><i class="fas fa-image text-orange-500"></i> 参考图</label>
+                        <span class="text-[10px] px-2 py-0.5 rounded bg-orange-50 text-orange-500">Max 3</span>
                     </div>
                     <div id="uploadedImages" class="hidden mb-2">
                         <div id="imageGrid" class="grid grid-cols-3 gap-2 mb-2"></div>
                         <p class="text-[10px] text-gray-500 text-center">已上传 <span id="imageCount">0</span>/3</p>
                     </div>
-                    <button id="uploadBtn" class="w-full h-8 lg:h-10 rounded-lg bg-opacity-50 hover:bg-blue-500/10 text-gray-500 hover:text-blue-500 text-[10px] lg:text-xs flex items-center justify-center gap-2 transition-all border border-transparent">
+                    <button id="uploadBtn" class="w-full h-8 lg:h-10 rounded-lg bg-opacity-50 hover:bg-orange-50 text-gray-500 hover:text-orange-500 text-[10px] lg:text-xs flex items-center justify-center gap-2 transition-all border border-transparent">
                         <i class="fas fa-plus"></i> <span id="uploadBtnText">上传</span>
                     </button>
                 </div>
@@ -189,7 +198,7 @@
                 <div class="flex-shrink-0 flex flex-col mt-2 lg:mt-0" style="height: 140px;"> 
                     <label class="text-[10px] lg:text-xs font-bold text-gray-500 mb-1 lg:mb-2 block uppercase pl-1 flex justify-between">
                         <span>Prompt</span>
-                        <span class="text-blue-500 cursor-pointer" id="clearPromptBtn">清空</span>
+                        <span class="text-orange-500 cursor-pointer" id="clearPromptBtn">清空</span>
                     </label>
                     <div class="relative flex-1 w-full h-full">
                         <textarea id="promptInput" class="w-full h-full component-tertiary rounded-xl p-3 resize-none text-xs lg:text-sm leading-relaxed focus:outline-none" style="background-color: var(--bg-tertiary) !important;" placeholder="描述你想生成的画面..." maxlength="2000"></textarea>
@@ -198,7 +207,7 @@
                 </div>
 
                 <div class="flex-shrink-0 pb-4">
-                    <button id="advancedToggle" class="w-full flex items-center justify-between text-xs font-medium text-gray-500 hover:text-blue-500 py-2">
+                    <button id="advancedToggle" class="w-full flex items-center justify-between text-xs font-medium text-gray-500 hover:text-orange-500 py-2">
                         <span><i class="fas fa-sliders-h mr-1"></i> 高级设置</span><i class="fas fa-chevron-right text-[10px] transition-transform" id="advancedIcon"></i>
                     </button>
                     <div id="advancedSettings" class="hidden mt-3 space-y-4 pl-1">
@@ -209,7 +218,7 @@
                             </select>
                         </div>
                         <div id="aspect-ratio-box" class="hidden transition-all duration-300">
-                            <label class="text-[10px] text-gray-500 mb-1 block flex items-center gap-1">画面比例 <span class="text-blue-500 text-[9px] border border-blue-500/30 px-1 rounded">2.0 模型专属</span></label>
+                            <label class="text-[10px] text-gray-500 mb-1 block flex items-center gap-1">画面比例 <span class="text-orange-500 text-[9px] border border-orange-300 px-1 rounded">2.0 模型专属</span></label>
                             <select id="aspectRatioSelect" class="w-full component-tertiary rounded-lg px-3 py-2 text-xs outline-none cursor-pointer">
                                 <option value="1:1">1:1 (正方形)</option><option value="3:4">3:4 (手机竖屏)</option><option value="4:3">4:3 (iPad/老照片)</option><option value="16:9">16:9 (电脑横屏)</option><option value="9:16">9:16 (抖音/全屏)</option><option value="21:9">21:9 (电影宽屏)</option>
                             </select>
@@ -227,25 +236,25 @@
         </div>
 
         <!-- 右侧：灵感页 -->
-        <div id="right-content-panel" class="flex-1 theme-transition flex flex-col lg:h-screen relative overflow-hidden lg:flex">
-            <div class="p-6 border-b border-custom backdrop-blur-md flex items-center justify-between flex-shrink-0">
+        <div id="right-content-panel" class="flex-1 flex flex-col lg:h-screen relative overflow-hidden lg:flex">
+            <div class="p-6 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
                  <div class="flex items-center gap-3">
-                    <div class="flex rounded-full p-1 border border-custom component-tertiary">
-                        <button id="inspirationTab" class="px-4 lg:px-6 py-2 rounded-full bg-blue-500/10 text-blue-500 text-xs font-bold transition-all flex items-center gap-2">
+                    <div class="flex rounded-full p-1 border border-gray-200 bg-gray-50">
+                        <button id="inspirationTab" class="px-4 lg:px-6 py-2 rounded-full bg-orange-50 text-orange-500 text-xs font-bold transition-all flex items-center gap-2">
                             <i class="fas fa-fire"></i> 灵感
                         </button>
-                        <button id="myWorksTab" class="px-4 lg:px-6 py-2 rounded-full text-gray-500 hover:text-blue-500 transition-all text-xs font-bold flex items-center gap-2">
+                        <button id="myWorksTab" class="px-4 lg:px-6 py-2 rounded-full text-gray-500 hover:text-orange-500 transition-all text-xs font-bold flex items-center gap-2">
                             <i class="fas fa-folder-open"></i> 我的
                         </button>
                     </div>
-                    <a href="/batch.html" id="batchTabLink" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-blue-500/40 text-[11px] text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 hover:border-blue-400 transition-colors">
+                    <a href="/batch.html" id="batchTabLink" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-orange-400 text-[11px] text-orange-300 bg-orange-50 hover:bg-orange-100 hover:border-orange-400 transition-colors">
                         <i class="fas fa-layer-group text-xs"></i>
                         <span>批量图生图</span>
                     </a>
                 </div>
                 <div class="hidden sm:flex relative">
                      <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs"></i>
-                     <input type="text" placeholder="搜索..." class="pl-8 pr-4 py-1.5 rounded-full text-xs component-tertiary w-40 focus:w-56 transition-all">
+                     <input type="text" placeholder="搜索..." class="pl-8 pr-4 py-1.5 rounded-full text-xs bg-gray-50 border border-gray-200 w-40 focus:w-56 transition-all">
                 </div>
             </div>
 
@@ -261,24 +270,24 @@
     <!-- 弹窗 -->
     <div id="userCenterModal" class="hidden fixed inset-0 z-[70] flex items-center justify-center">
          <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-        <div class="relative component-bg w-full max-w-md mx-4 rounded-2xl shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
-            <div class="h-24 bg-gradient-to-r from-blue-500 to-purple-600 relative">
+        <div class="relative bg-white w-full max-w-md mx-4 rounded-2xl shadow-2xl overflow-hidden border border-gray-200" onclick="event.stopPropagation()">
+            <div class="h-24 bg-gradient-to-r from-orange-500 to-orange-600 relative">
                 <button type="button" id="closeUserCenterBtn" class="absolute top-3 right-3 text-white text-xl w-8 h-8 flex items-center justify-center hover:bg-white/20 rounded-full transition-colors">×</button>
             </div>
             <div class="px-6 pb-6 relative">
-                <div class="w-20 h-20 rounded-full bg-gray-900 border-4 border-[#1e1e24] -mt-10 mb-4 flex items-center justify-center shadow-lg"><i class="fas fa-user text-3xl text-gray-400"></i></div>
+                <div class="w-20 h-20 rounded-full bg-gray-200 border-4 border-white -mt-10 mb-4 flex items-center justify-center shadow-lg"><i class="fas fa-user text-3xl text-gray-600"></i></div>
                 <div class="flex justify-between items-start mb-6">
                     <div><h2 id="modalUserName" class="text-xl font-bold">加载中...</h2><p id="modalUserId" class="text-xs text-gray-500">ID: -</p></div>
-                    <div id="apiKeyStatus"><span id="apiKeyStatusBadge" class="text-[10px] px-2 py-1 rounded-full bg-red-500/20 text-red-500">未配置</span></div>
+                    <div id="apiKeyStatus"><span id="apiKeyStatusBadge" class="text-[10px] px-2 py-1 rounded-full bg-red-50 text-red-600 border border-red-200">未配置</span></div>
                 </div>
                 <div class="grid grid-cols-2 gap-3 mb-6">
-                    <div class="component-tertiary rounded-xl p-4 text-center"><div id="modalDrawingPoints" class="text-lg font-bold text-blue-500">0</div><div class="text-xs text-gray-500">积分</div></div>
-                    <div class="component-tertiary rounded-xl p-4 text-center"><div id="modalCreationCount" class="text-lg font-bold text-purple-500">0</div><div class="text-xs text-gray-500">创作</div></div>
+                    <div class="bg-gray-50 rounded-xl p-4 text-center"><div id="modalDrawingPoints" class="text-lg font-bold text-orange-500">0</div><div class="text-xs text-gray-500">积分</div></div>
+                    <div class="bg-gray-50 rounded-xl p-4 text-center"><div id="modalCreationCount" class="text-lg font-bold text-orange-500">0</div><div class="text-xs text-gray-500">创作</div></div>
                 </div>
                 <button id="checkinBtn" class="w-full py-3 bg-gradient-to-r from-green-500 to-teal-500 text-white font-bold rounded-xl mb-2 relative overflow-hidden">每日签到</button>
                 <div class="text-center text-xs text-gray-500 mb-4"><span id="checkinCountText"></span></div>
                 <div class="flex gap-3">
-                    <button id="configApiKeyBtn" class="flex-1 py-2 border border-blue-500/50 text-blue-500 rounded-lg text-xs">配置 Key</button>
+                    <button id="configApiKeyBtn" class="flex-1 py-2 border border-orange-500 text-orange-500 rounded-lg text-xs">配置 Key</button>
                     <button id="deleteApiKeyBtn" class="flex-1 py-2 border border-red-500/50 text-red-500 rounded-lg text-xs hidden">删除 Key</button>
                 </div>
             </div>
@@ -287,14 +296,14 @@
 
     <div id="apiKeyModal" class="hidden fixed inset-0 z-[71] flex items-center justify-center">
          <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" id="apiKeyBackdrop"></div>
-        <div class="relative component-bg w-full max-w-md mx-4 rounded-xl p-6 shadow-2xl">
+        <div class="relative bg-white w-full max-w-md mx-4 rounded-xl p-6 shadow-2xl border border-gray-200">
             <h2 class="text-lg font-bold mb-4">配置 API Key</h2>
             <p class="text-xs text-gray-500 mb-3">积分用完后将使用 KEY 进行绘图，可填写 OpenAI 兼容服务地址</p>
-            <input id="apiKeyInput" type="password" class="w-full component-tertiary rounded-lg px-4 py-3 text-sm mb-4" placeholder="sk-...">
-             <input id="apiBaseUrlInput" type="text" class="w-full component-tertiary rounded-lg px-4 py-3 text-sm mb-4" placeholder="https://api.openai.com" value="">
+            <input id="apiKeyInput" type="password" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm mb-4" placeholder="sk-...">
+             <input id="apiBaseUrlInput" type="text" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm mb-4" placeholder="https://api.openai.com" value="">
             <div class="flex gap-3">
-                <button id="saveApiKeyBtn" class="flex-1 bg-blue-600 text-white py-2 rounded-lg">保存</button>
-                <button id="cancelApiKeyBtn" class="flex-1 component-tertiary py-2 rounded-lg">取消</button>
+                <button id="saveApiKeyBtn" class="flex-1 bg-orange-500 text-white py-2 rounded-lg">保存</button>
+                <button id="cancelApiKeyBtn" class="flex-1 bg-gray-50 border border-gray-200 py-2 rounded-lg">取消</button>
             </div>
         </div>
     </div>
@@ -325,7 +334,7 @@
         const controlPanel = document.getElementById('control-panel-container');
         const rightContent = document.getElementById('right-content-panel');
 
-        const activeClass = "flex-1 py-1.5 text-xs font-bold rounded-full shadow-sm bg-blue-600 text-white transition-all duration-300 flex items-center justify-center gap-1";
+        const activeClass = "flex-1 py-1.5 text-xs font-bold rounded-full shadow-sm bg-orange-500 text-white transition-all duration-300 flex items-center justify-center gap-1";
         const inactiveClass = "flex-1 py-1.5 text-xs font-medium rounded-full text-gray-400 hover:text-gray-200 transition-all duration-300 flex items-center justify-center gap-1";
         const inspirationTab = document.getElementById('inspirationTab');
         const myWorksTab = document.getElementById('myWorksTab');
@@ -344,7 +353,7 @@
                 mobileTabInspire.className = activeClass;
                 mobileTabCreate.className = inactiveClass;
                 // 模拟点击PC端的Tab来触发数据加载
-                if (myWorksTab.classList.contains('bg-blue-500/10')) {
+                if (myWorksTab.classList.contains('bg-orange-50')) {
                     myWorksTab.click();
                 } else {
                     inspirationTab.click();
@@ -597,7 +606,7 @@
 
         const promptText = item.prompt || '无提示词';
         const bottomText = isInspiration ? 
-            `<div class="mt-3 flex items-center gap-2 text-[10px] text-blue-400 font-bold uppercase tracking-wider"><i class="fas fa-magic animate-pulse"></i> <span>点击应用提示词</span></div>` :
+            `<div class="mt-3 flex items-center gap-2 text-[10px] text-orange-400 font-bold uppercase tracking-wider"><i class="fas fa-magic animate-pulse"></i> <span>点击应用提示词</span></div>` :
             `<div class="mt-3 flex items-center gap-2 text-[10px] text-gray-400 font-bold tracking-wider"><span>${item.created_at ? new Date(item.created_at).toLocaleDateString() : ''}</span></div>`;
 
         const safeUrl = fixImageUrl(item.url);
@@ -706,7 +715,7 @@
                     正在获取最新公告...
                 </div>
             </div>
-            <div class="h-[2px] w-full bg-gradient-to-r from-blue-500/50 via-purple-500/50 to-pink-500/50 opacity-50"></div>
+            <div class="h-[2px] w-full bg-gradient-to-r from-orange-500/50 via-orange-500/50 to-orange-500/50 opacity-50"></div>
         </div>
         <button id="closeNoticeMainBtn" class="hidden"></button>
     </div>
