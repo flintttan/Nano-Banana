@@ -302,7 +302,7 @@ router.post('/api-keys', authenticateToken, async (req, res, next) => {
             [userId]
         );
 
-        const baseUrl = api_base_url || 'https://api.fengjungpt.com';
+        const baseUrl = api_base_url || process.env.AI_API_BASE_URL || 'https://api.openai.com';
         const now = new Date();
 
         if (existingKeys.length > 0) {

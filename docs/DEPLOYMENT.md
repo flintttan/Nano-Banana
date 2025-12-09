@@ -28,7 +28,7 @@
 - **操作系统**: Linux / macOS / Windows
 
 ### 网络要求
-- 能够访问 AI API 服务（默认：https://api.fengjungpt.com）
+- 能够访问 AI API 服务（默认：https://api.openai.com 或其他 OpenAI 兼容服务）
 - 如需邮箱验证功能，需能连接到 SMTP 服务器
 
 ---
@@ -75,7 +75,7 @@ DB_NAME=nano_banana
 JWT_SECRET=your_super_secret_jwt_key_change_this
 
 # AI API 配置
-AI_API_BASE_URL=https://api.fengjungpt.com
+AI_API_BASE_URL=https://api.openai.com
 AI_API_KEY=sk-your-api-key
 
 # 邮箱配置 (QQ 邮箱示例)
@@ -438,7 +438,7 @@ services:
       - DB_PASSWORD=root_password
       - DB_NAME=nano_banana
       - JWT_SECRET=your_jwt_secret
-      - AI_API_BASE_URL=https://api.fengjungpt.com
+      - AI_API_BASE_URL=https://api.openai.com
       - AI_API_KEY=sk-your-api-key
     depends_on:
       - mysql

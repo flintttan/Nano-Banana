@@ -16,8 +16,8 @@ const API_BASE_URL = '/api';
 // 当前登录用户信息
 let currentUser = null;
 
-// 当前选中的模型 ID
-let selectedModel = 'nano-banana'; 
+// 当前选中的模型 ID（默认使用新的生图模型）
+let selectedModel = 'gemini-2.5-flash-image'; 
 
 // 当前选择的生成数量
 let selectedQuantity = '1';
@@ -68,6 +68,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function loadAvailableModels() {
     const models = [
+        {
+            id: 'gemini-2.5-flash-image',
+            name: 'Gemini 2.5 Flash Image',
+            icon: '🪐',
+            description: '默认生图模型，基于 /v1/chat/completions 接口，生成速度快'
+        },
         { 
             id: 'nano-banana', 
             name: 'Nano Banana', 

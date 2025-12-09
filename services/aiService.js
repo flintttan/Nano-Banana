@@ -8,7 +8,7 @@ class AIService {
     // 系统默认配置
     this.defaultBaseURL = process.env.AI_API_BASE_URL;
     this.defaultApiKey = process.env.AI_API_KEY;
-    this.timeout = 180000; // 延长超时时间到3分钟
+    this.timeout = 600000; // 延长超时时间到10分钟，避免大图生成过早超时
   }
 
   // 创建axios实例
@@ -42,18 +42,14 @@ class AIService {
     return null;
   }
 
-  // ✅ 【修复核心】文生图 - 强制接收 width 和 height
+  // ✅ 文生图：改为使用 OpenAI /v1/chat/completions 接口规范
   async generateImage(params) {
     const { 
       prompt, 
-      model = 'gpt-4o-image', 
-      n = 1, 
-      quality = 'standard',
-      style = 'vivid',
-      responseFormat = 'url', 
-      size,          // 旧参数
-      width,         // 🔥 新增：接收前端发的宽度
-      height,        // 🔥 新增：接收前端发的高度
+      model = 'gemini-2.5-flash-image', 
+      size,          // 旧参数，仅用于本地记录，不再传给上游
+      width,         // 前端宽度，仅用于本地记录
+      height,        // 前端高度，仅用于本地记录
       apiKey = null,
       baseUrl = null
     } = params;
@@ -61,71 +57,58 @@ class AIService {
     const finalApiKey = apiKey || this.defaultApiKey;
     const finalBaseURL = baseUrl || this.defaultBaseURL;
 
-    // 🔥 智能尺寸逻辑：优先使用具体的 width/height
-    let finalSize = size || '1024x1024';
-    if (width && height) {
-      finalSize = `${width}x${height}`;
-    }
-
-    // 构造请求数据
-    const requestData = { 
-      model, 
-      prompt, 
-      n, 
-      size: finalSize, 
-      quality, 
-      style, 
-      response_format: responseFormat 
+    // chat/completions 文生图：严格对齐提供的规范，只发送 model + messages
+    const requestData = {
+      model,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: prompt
+            }
+          ]
+        }
+      ]
     };
 
-    // 🔥 兼容性增强：有些非OpenAI的自定义模型（如SD/MJ wrapper）可能直接需要 width/height 字段
-    if (width) requestData.width = parseInt(width);
-    if (height) requestData.height = parseInt(height);
-
-    console.log('🎨 开始[文生图]:', { model, size: finalSize, width, height });
-    console.log(`📡 API地址: ${finalBaseURL}`);
+    console.log('🎨 开始[文生图]:', { model, size, width, height });
+    const fullUrl = `${finalBaseURL}/v1/chat/completions`;
 
     try {
-      const response = await axios.post(
-        `${finalBaseURL}/v1/images/generations`,
-        requestData,
-        {
-          headers: {
-            'Authorization': `Bearer ${finalApiKey}`,
-            'Content-Type': 'application/json'
-          },
-          timeout: this.timeout
-        }
+      const response = await axios.post(fullUrl, requestData, {
+        headers: {
+          'Authorization': `Bearer ${finalApiKey}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: this.timeout
+      });
+
+      console.log('✅ [文生图] 请求成功');
+
+      const images = this.parseImagesFromChatCompletion(
+        response.data,
+        width,
+        height,
+        size
       );
 
-      console.log(`✅ [文生图] API请求成功`);
-      
-      // 处理返回数据中的尺寸
-      if (response.data && response.data.data && Array.isArray(response.data.data)) {
-        response.data.data = response.data.data.map(item => {
-          const sizeInfo = this.extractImageSize(item);
-          if (sizeInfo) {
-            item.width = sizeInfo.width;
-            item.height = sizeInfo.height;
-            item.size = `${sizeInfo.width}x${sizeInfo.height}`;
-          } else if (width && height) {
-            // 如果API没返回尺寸，我们把请求的尺寸补上去，方便前端显示
-            item.width = parseInt(width);
-            item.height = parseInt(height);
-            item.size = finalSize;
-          }
-          return item;
-        });
-      }
-
-      return { success: true, data: response.data };
+      // 为了兼容之前使用 /v1/images 接口的调用方，这里仍然返回 { data: [{ url, size, ... }] } 结构
+      return { success: true, data: { data: images } };
     } catch (error) {
-      console.error('❌ [文生图]失败:', error.response?.data || error.message);
+      if (error.response) {
+        console.error('❌ [文生图]失败:', error.response.status, this.formatError(error));
+      } else if (error.request) {
+        console.error('❌ [文生图]失败 - 无响应:', error.code || error.message);
+      } else {
+        console.error('❌ [文生图]失败 - 请求异常:', error.message);
+      }
       return { success: false, error: this.formatError(error) };
     }
   }
 
-  // ✅ 【修复核心】图生图 - 强制接收 width 和 height
+  // ✅ 图生图：改为使用 OpenAI /v1/chat/completions 接口规范
   async editImage(params) {
     const { 
       prompt, 
@@ -133,97 +116,240 @@ class AIService {
       images, 
       model, 
       size, 
-      width,         // 🔥 新增
-      height,        // 🔥 新增
-      n = 1, 
-      responseFormat = 'url',
+      width,         // 仅用于本地记录
+      height,        // 仅用于本地记录
       originalName = 'upload.png',
       apiKey = null,
       baseUrl = null
     } = params;
-    
+
     const finalApiKey = apiKey || this.defaultApiKey;
     const finalBaseURL = baseUrl || this.defaultBaseURL;
 
-    // 🔥 智能尺寸逻辑
+    // chat/completions 下，图片通过富文本 content 传递为 base64 data-url
     let finalSize = size;
     if (width && height) {
       finalSize = `${width}x${height}`;
     }
 
-    const form = new FormData();
-    form.append('prompt', prompt);
-    
-    // 处理图片
-    if (images && Array.isArray(images)) {
+    const imageParts = [];
+
+    // 处理图片：将上传的文件转为 data URL，并以 image_url 形式传递（参考规范）
+    if (images && Array.isArray(images) && images.length > 0) {
       images.forEach((file) => {
-        form.append('image', file.buffer, { filename: file.originalname });
+        const base64 = file.buffer.toString('base64');
+        const mime = file.mimetype || 'image/png';
+        imageParts.push({
+          type: 'image_url',
+          image_url: { url: `data:${mime};base64,${base64}` }
+        });
       });
     } else if (image) {
-      form.append('image', image, { filename: originalName });
-    }
-    
-    form.append('model', model);
-    form.append('n', n.toString());
-    form.append('response_format', responseFormat);
-
-    // 🔥 强制传递尺寸参数
-    if (finalSize) {
-      form.append('size', finalSize);
-      // 某些API可能需要单独的 width/height 字段，通过 FormData 传过去更保险
-      if(width) form.append('width', width);
-      if(height) form.append('height', height);
-      console.log(`📐 [图生图] 设定尺寸: ${finalSize} (W:${width}, H:${height})`);
+      const base64 = image.toString('base64');
+      imageParts.push({
+        type: 'image_url',
+        image_url: { url: `data:image/png;base64,${base64}` }
+      });
     }
 
-    console.log('🎨 开始[图生图]...');
+    const userContent = [
+      ...imageParts,
+      { type: 'text', text: prompt }
+    ];
+
+    // 图生图请求体同样遵循规范：只发送 model + messages
+    const requestData = {
+      model,
+      messages: [
+        {
+          role: 'user',
+          content: userContent
+        }
+      ]
+    };
+
+    if (width && height) {
+      console.log(`📐 [图生图] 本地记录尺寸: ${finalSize} (W:${width}, H:${height})`);
+    }
+
+    console.log('🎨 开始[图生图]:', {
+      model,
+      size: finalSize,
+      width,
+      height,
+      imageCount: imageParts.length
+    });
+
+    const fullUrl = `${finalBaseURL}/v1/chat/completions`;
 
     try {
-      const response = await axios.post(
-        `${finalBaseURL}/v1/images/edits`, 
-        form, 
-        {
-          headers: {
-            'Authorization': `Bearer ${finalApiKey}`,
-            ...form.getHeaders()
-          },
-          timeout: this.timeout
-        }
+      const response = await axios.post(fullUrl, requestData, {
+        headers: {
+          'Authorization': `Bearer ${finalApiKey}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: this.timeout
+      });
+
+      console.log('✅ [图生图] 请求成功');
+
+      const imagesFromChat = this.parseImagesFromChatCompletion(
+        response.data,
+        width,
+        height,
+        finalSize
       );
 
-      console.log(`✅ [图生图] API请求成功`);
-      
-      // 补充尺寸信息
-      if (response.data && response.data.data) {
-        response.data.data = response.data.data.map(item => {
-           // 尝试提取，提取不到就用请求的尺寸兜底
-           const sizeInfo = this.extractImageSize(item);
-           if (sizeInfo) {
-             item.width = sizeInfo.width;
-             item.height = sizeInfo.height;
-             item.size = `${sizeInfo.width}x${sizeInfo.height}`;
-           } else if (width && height) {
-             item.width = parseInt(width);
-             item.height = parseInt(height);
-             item.size = finalSize;
-           }
-           return item;
-        });
-      }
-
-      return { success: true, data: response.data };
+      return { success: true, data: { data: imagesFromChat } };
 
     } catch (error) {
-      console.error('❌ [图生图]失败:', error.response?.data || error.message);
+      if (error.response) {
+        console.error('❌ [图生图]失败:', error.response.status, this.formatError(error));
+      } else if (error.request) {
+        console.error('❌ [图生图]失败 - 无响应:', error.code || error.message);
+      } else {
+        console.error('❌ [图生图]失败 - 请求异常:', error.message);
+      }
       return { success: false, error: this.formatError(error) };
+    }
+  }
+
+  // 解析 /v1/chat/completions 响应中的图片 URL，并补充尺寸信息
+  parseImagesFromChatCompletion(responseData, width, height, size) {
+    const images = [];
+    if (!responseData || !Array.isArray(responseData.choices)) return images;
+
+    const requestedWidth = width ? parseInt(width) : null;
+    const requestedHeight = height ? parseInt(height) : null;
+    let requestedSize = size;
+    if (!requestedSize && requestedWidth && requestedHeight) {
+      requestedSize = `${requestedWidth}x${requestedHeight}`;
+    }
+
+    for (const choice of responseData.choices) {
+      const message = choice.message || {};
+      const content = message.content;
+
+      if (Array.isArray(content)) {
+        for (const part of content) {
+          // 优先解析 { type: 'image_url', image_url: { url } } 结构
+          if (part.type === 'image_url' && part.image_url && part.image_url.url) {
+            const item = { url: part.image_url.url };
+            this.enrichImageSize(item, requestedWidth, requestedHeight, requestedSize);
+            images.push(item);
+          } else if (part.type === 'text' && typeof part.text === 'string') {
+            const urls = this.extractUrlsFromText(part.text);
+            urls.forEach((u) => {
+              const item = { url: u };
+              this.enrichImageSize(item, requestedWidth, requestedHeight, requestedSize);
+              images.push(item);
+            });
+          }
+        }
+      } else if (typeof content === 'string') {
+        const urls = this.extractUrlsFromText(content);
+        urls.forEach((u) => {
+          const item = { url: u };
+          this.enrichImageSize(item, requestedWidth, requestedHeight, requestedSize);
+          images.push(item);
+        });
+      }
+    }
+
+    if (!images.length) {
+      throw new Error('未从 AI 响应中解析到图片地址');
+    }
+
+    return images;
+  }
+
+  // 从文本中提取所有 URL
+  extractUrlsFromText(text) {
+    if (!text) return [];
+
+    const urls = [];
+
+    // 1) Markdown 图片语法: ![alt](URL)
+    const markdownImgRegex = /!\[[^\]]*\]\(([^)]+)\)/g;
+    let match;
+    while ((match = markdownImgRegex.exec(text)) !== null) {
+      if (match[1]) urls.push(match[1]);
+    }
+
+    // 2) 明文 http/https 链接
+    const httpRegex = /https?:\/\/[^\s"')]+/g;
+    const httpMatches = text.match(httpRegex) || [];
+    urls.push(...httpMatches);
+
+    // 3) data:image/...;base64,... 形式（即使不在 markdown 中）
+    const dataImgRegex = /data:image\/[a-zA-Z0-9.+-]+;base64,[0-9a-zA-Z+/=]+/g;
+    const dataMatches = text.match(dataImgRegex) || [];
+    urls.push(...dataMatches);
+
+    // 去重
+    return Array.from(new Set(urls));
+  }
+
+  // 生成用于日志的安全请求体：去掉 / 精简 base64 图片内容
+  sanitizePayloadForLog(payload) {
+    try {
+      const clone = JSON.parse(JSON.stringify(payload));
+      this._sanitizeObjectInPlace(clone);
+      return clone;
+    } catch (e) {
+      // 如果克隆失败，就直接返回原始对象（不抛错影响正常逻辑）
+      return payload;
+    }
+  }
+
+  _sanitizeObjectInPlace(obj) {
+    if (!obj || typeof obj !== 'object') return;
+
+    if (Array.isArray(obj)) {
+      obj.forEach((item) => this._sanitizeObjectInPlace(item));
+      return;
+    }
+
+    for (const key of Object.keys(obj)) {
+      const val = obj[key];
+      if (typeof val === 'string') {
+        obj[key] = this._sanitizeStringForLog(val);
+      } else if (val && typeof val === 'object') {
+        this._sanitizeObjectInPlace(val);
+      }
+    }
+  }
+
+  _sanitizeStringForLog(str) {
+    if (typeof str !== 'string') return str;
+
+    // 截断 data:image/...;base64, 很长的图片数据，避免日志过大
+    if (str.startsWith('data:image') && str.includes('base64,')) {
+      const prefix = str.substring(0, str.indexOf('base64,') + 'base64,'.length);
+      return `${prefix}[base64_omitted]`;
+    }
+
+    return str;
+  }
+
+  // 根据 URL 或请求尺寸补充宽高信息
+  enrichImageSize(item, requestedWidth, requestedHeight, requestedSize) {
+    const sizeInfo = this.extractImageSize(item);
+    if (sizeInfo) {
+      item.width = sizeInfo.width;
+      item.height = sizeInfo.height;
+      item.size = `${sizeInfo.width}x${sizeInfo.height}`;
+    } else if (requestedWidth && requestedHeight) {
+      item.width = requestedWidth;
+      item.height = requestedHeight;
+      item.size = requestedSize || `${requestedWidth}x${requestedHeight}`;
     }
   }
 
   // 获取可用模型
   async getAvailableModels() {
-    // ... 保持原样 ...
     const modelData = {
-      'gpt-4o-image': { name: 'GPT-4o-Image', description: '智能图像生成', icon: '🌟' },
+      'gemini-2.5-flash-image': { name: 'Gemini 2.5 Flash Image', description: '默认生图模型（chat.completions）', icon: '🪐' },
       'nano-banana': { name: 'Nano Banana', description: '快速生成', icon: '🍌' },
       'nano-banana-hd': { name: 'Nano Banana HD', description: '高清品质', icon: '🍌✨' },
       'nano-banana-2': { name: 'Nano Banana 2.0', description: '旗舰模型', icon: '🚀' }

@@ -71,9 +71,8 @@ build
 .nuxt
 dist
 
-# Gatsby 文件
+# Gatsby 文件（本项目首页静态文件位于 public 目录，不能忽略）
 .cache/
-public
 
 # Storybook 构建输出
 .out

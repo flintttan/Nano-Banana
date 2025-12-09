@@ -132,7 +132,7 @@
              <div class="mb-6 text-2xl text-transparent bg-clip-text bg-gradient-to-br from-blue-400 to-purple-600"><i class="fas fa-rocket"></i></div>
             <div class="flex flex-col items-center space-y-4 w-full">
                 <button id="notificationBtn" class="w-10 h-10 rounded-lg flex items-center justify-center text-gray-400 hover:text-blue-500 transition-colors"><i class="fas fa-bell text-xl"></i></button>
-                <a href="https://api.fengjungpt.com" target="_blank" id="apiButton" class="w-10 h-10 rounded-lg flex items-center justify-center text-gray-400 hover:text-blue-500 transition-colors font-bold text-xs no-underline">API</a>
+                <button id="batchButton" class="w-10 h-10 rounded-lg flex items-center justify-center text-gray-400 hover:text-blue-500 transition-colors" title="批量生成"><i class="fas fa-layer-group text-base"></i></button>
                 <button id="tutorialBtn" class="w-10 h-10 rounded-lg flex items-center justify-center text-gray-400 hover:text-blue-500 transition-colors"><i class="fas fa-book-open text-base"></i></button>
                 <button id="themeToggle" class="w-10 h-10 rounded-lg flex items-center justify-center text-gray-400 hover:text-blue-500 transition-colors"><i class="fas fa-moon text-xl" id="themeIcon"></i></button>
             </div>
@@ -282,9 +282,9 @@
          <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" id="apiKeyBackdrop"></div>
         <div class="relative component-bg w-full max-w-md mx-4 rounded-xl p-6 shadow-2xl">
             <h2 class="text-lg font-bold mb-4">配置 API Key</h2>
-            <p class="text-xs text-gray-500 mb-3">积分用完后将使用KEY进行绘图</p>
+            <p class="text-xs text-gray-500 mb-3">积分用完后将使用 KEY 进行绘图，可填写 OpenAI 兼容服务地址</p>
             <input id="apiKeyInput" type="password" class="w-full component-tertiary rounded-lg px-4 py-3 text-sm mb-4" placeholder="sk-...">
-             <input id="apiBaseUrlInput" type="text" class="w-full component-tertiary rounded-lg px-4 py-3 text-sm mb-4" value="https://api.fengjungpt.com">
+             <input id="apiBaseUrlInput" type="text" class="w-full component-tertiary rounded-lg px-4 py-3 text-sm mb-4" placeholder="https://api.openai.com" value="">
             <div class="flex gap-3">
                 <button id="saveApiKeyBtn" class="flex-1 bg-blue-600 text-white py-2 rounded-lg">保存</button>
                 <button id="cancelApiKeyBtn" class="flex-1 component-tertiary py-2 rounded-lg">取消</button>
@@ -437,11 +437,27 @@
         const configApiKeyBtn = document.getElementById('configApiKeyBtn');
         const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
         const deleteApiKeyBtn = document.getElementById('deleteApiKeyBtn');
+        const batchButton = document.getElementById('batchButton');
 
         if(checkinBtn) checkinBtn.addEventListener('click', handleCheckin);
         if(configApiKeyBtn) configApiKeyBtn.addEventListener('click', () => apiKeyModal.classList.remove('hidden'));
         if(saveApiKeyBtn) saveApiKeyBtn.addEventListener('click', saveApiKey);
         if(deleteApiKeyBtn) deleteApiKeyBtn.addEventListener('click', deleteApiKey);
+        if(batchButton) batchButton.addEventListener('click', () => {
+            const advancedSettings = document.getElementById('advancedSettings');
+            const advancedIcon = document.getElementById('advancedIcon');
+            const controlPanel = document.getElementById('control-panel-container');
+            if (advancedSettings && advancedSettings.classList.contains('hidden')) {
+                advancedSettings.classList.remove('hidden');
+                if (advancedIcon) advancedIcon.classList.add('rotate-180');
+            }
+            if (controlPanel) {
+                controlPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            if (window.showSuccessToast) {
+                window.showSuccessToast('已打开批量生成设置，可在高级设置中调整生成数量');
+            }
+        });
 
         document.getElementById('logout-button')?.addEventListener('click', () => { 
             if(confirm('确定退出吗？')) { 
