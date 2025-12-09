@@ -18,10 +18,10 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- 数据库： `art_fengjungpt_c`
+-- 数据库： `nano_banana`
 --
-CREATE DATABASE IF NOT EXISTS `art_fengjungpt_c` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-USE `art_fengjungpt_c`;
+CREATE DATABASE IF NOT EXISTS `nano_banana` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+USE `nano_banana`;
 
 -- --------------------------------------------------------
 

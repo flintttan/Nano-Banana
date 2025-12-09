@@ -132,11 +132,9 @@
              <div class="mb-6 text-2xl text-transparent bg-clip-text bg-gradient-to-br from-blue-400 to-purple-600"><i class="fas fa-rocket"></i></div>
             <div class="flex flex-col items-center space-y-4 w-full">
                 <button id="notificationBtn" class="w-10 h-10 rounded-lg flex items-center justify-center text-gray-400 hover:text-blue-500 transition-colors"><i class="fas fa-bell text-xl"></i></button>
-                <a href="https://api.fengjungpt.com" target="_blank" id="apiButton" class="w-10 h-10 rounded-lg flex items-center justify-center text-gray-400 hover:text-blue-500 transition-colors font-bold text-xs no-underline">API</a>
                 <a href="/batch.html" id="batchPageButton" class="w-10 h-10 rounded-lg flex items-center justify-center text-gray-400 hover:text-blue-500 transition-colors" title="批量图生图">
                     <i class="fas fa-layer-group text-base"></i>
                 </a>
-                <button id="tutorialBtn" class="w-10 h-10 rounded-lg flex items-center justify-center text-gray-400 hover:text-blue-500 transition-colors"><i class="fas fa-book-open text-base"></i></button>
                 <button id="themeToggle" class="w-10 h-10 rounded-lg flex items-center justify-center text-gray-400 hover:text-blue-500 transition-colors"><i class="fas fa-moon text-xl" id="themeIcon"></i></button>
             </div>
             <div class="relative mt-auto pt-6 border-t border-custom w-full flex justify-center">
@@ -301,16 +299,6 @@
         </div>
     </div>
 
-    <div id="tutorialModal" class="hidden fixed inset-0 z-[80] flex items-center justify-center">
-         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" id="tutorialBackdrop"></div>
-        <div class="relative w-full h-full max-w-6xl max-h-[90vh] mx-4 rounded-2xl shadow-2xl overflow-hidden bg-[#09090b] border border-white/10 flex flex-col animate-[fadeIn_0.3s_ease-out]">
-            <button id="closeTutorialBtn" class="absolute top-4 right-4 z-50 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center border border-white/20 hover:bg-white/20 transition-colors cursor-pointer">
-                <i class="fas fa-times"></i>
-            </button>
-            <iframe src="./tutorial.html" class="w-full h-full border-none" style="background-color: #09090b;"></iframe>
-        </div>
-    </div>
-
     <script src="main.js"></script>
 
     <script>
@@ -394,17 +382,6 @@
         if(apiKeyBackdrop) apiKeyBackdrop.addEventListener('click', hideApiKeyModal);
         if(cancelApiKeyBtn) cancelApiKeyBtn.addEventListener('click', hideApiKeyModal);
 
-        const tutorialBtn = document.getElementById('tutorialBtn');
-        const tutorialModal = document.getElementById('tutorialModal');
-        const closeTutorialBtn = document.getElementById('closeTutorialBtn');
-        const tutorialBackdrop = document.getElementById('tutorialBackdrop');
-        function toggleTutorial(show) {
-            if(show) tutorialModal.classList.remove('hidden');
-            else tutorialModal.classList.add('hidden');
-        }
-        if(tutorialBtn) tutorialBtn.addEventListener('click', () => toggleTutorial(true));
-        if(closeTutorialBtn) closeTutorialBtn.addEventListener('click', () => toggleTutorial(false));
-        if(tutorialBackdrop) tutorialBackdrop.addEventListener('click', () => toggleTutorial(false));
 
         const mobileBtn = document.getElementById('mobileMenuButton');
         const closeSidebarBtn = document.getElementById('closeSidebarBtn');
