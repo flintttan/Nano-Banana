@@ -106,7 +106,7 @@ router.get('/panel', (req, res) => {
                     <label class="block text-xs font-medium text-gray-400 mb-1.5 ml-1">管理员账号</label>
                     <div class="relative">
                         <i class="fas fa-envelope absolute left-4 top-3.5 text-gray-500"></i>
-                        <input type="email" id="email" value="925626799@qq.com" class="w-full input-dark rounded-xl py-3 pl-10 pr-4">
+                        <input type="email" id="email" value="${process.env.ADMIN_EMAIL || ''}" class="w-full input-dark rounded-xl py-3 pl-10 pr-4">
                     </div>
                 </div>
                 <div>
@@ -156,6 +156,11 @@ router.get('/panel', (req, res) => {
                 <button onclick="switchTab('notices')" id="btn-notices" class="nav-item w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all group">
                     <span class="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center group-hover:bg-orange-500/20 group-hover:text-orange-400 transition-colors"><i class="fas fa-bullhorn"></i></span>
                     <span class="font-medium">系统公告</span>
+                </button>
+
+                <button onclick="switchTab('settings')" id="btn-settings" class="nav-item w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all group">
+                    <span class="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center group-hover:bg-blue-500/20 group-hover:text-blue-400 transition-colors"><i class="fas fa-cog"></i></span>
+                    <span class="font-medium">系统设置</span>
                 </button>
 
                 <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wider px-4 mb-2 mt-6">批量功能</div>
@@ -303,7 +308,104 @@ router.get('/panel', (req, res) => {
                     </div>
                 </div>
 
-                <!-- 4. 批量配置 -->
+                <!-- 4. 系统设置 -->
+                <div id="settings" class="section hidden fade-in space-y-8">
+                    <!-- Mail Settings -->
+                    <div class="glass-panel rounded-2xl p-8 shadow-2xl">
+                        <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                            <span class="w-8 h-8 rounded bg-blue-500/20 flex items-center justify-center text-blue-400"><i class="fas fa-envelope"></i></span>
+                            邮件配置
+                        </h3>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold text-gray-400 ml-1">SMTP 服务器</label>
+                                <input id="mailHost" placeholder="smtp.example.com" class="w-full input-dark rounded-xl px-4 py-3">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold text-gray-400 ml-1">SMTP 端口</label>
+                                <input id="mailPort" type="number" placeholder="465" class="w-full input-dark rounded-xl px-4 py-3">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold text-gray-400 ml-1">发件邮箱</label>
+                                <input id="mailUser" placeholder="noreply@example.com" class="w-full input-dark rounded-xl px-4 py-3">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold text-gray-400 ml-1">邮箱授权码</label>
+                                <input id="mailPass" type="password" placeholder="授权码" class="w-full input-dark rounded-xl px-4 py-3">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold text-gray-400 ml-1">发件人显示</label>
+                                <input id="mailFrom" placeholder="Nano Banana <noreply@example.com>" class="w-full input-dark rounded-xl px-4 py-3">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold text-gray-400 ml-1">品牌名称</label>
+                                <input id="mailBrandName" placeholder="Nano Banana" class="w-full input-dark rounded-xl px-4 py-3">
+                            </div>
+                        </div>
+                        <div class="mt-6 flex justify-end">
+                            <button onclick="updateMailSettings()" class="px-8 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-bold shadow-lg transition-all">
+                                <i class="fas fa-save mr-2"></i> 保存邮件配置
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- AI Settings -->
+                    <div class="glass-panel rounded-2xl p-8 shadow-2xl">
+                        <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                            <span class="w-8 h-8 rounded bg-purple-500/20 flex items-center justify-center text-purple-400"><i class="fas fa-brain"></i></span>
+                            AI 模型配置
+                        </h3>
+                        <div class="grid grid-cols-1 gap-6">
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold text-gray-400 ml-1">API 基础地址</label>
+                                <input id="aiApiBaseUrl" placeholder="https://api.example.com" class="w-full input-dark rounded-xl px-4 py-3">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold text-gray-400 ml-1">API 密钥</label>
+                                <input id="aiApiKey" type="password" placeholder="sk-..." class="w-full input-dark rounded-xl px-4 py-3">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold text-gray-400 ml-1">模型列表 (JSON)</label>
+                                <textarea id="aiModels" rows="4" placeholder='[{"id":"model-1","name":"Model 1","description":"...","icon":"🚀"}]' class="w-full input-dark rounded-xl px-4 py-3 resize-none font-mono text-xs"></textarea>
+                                <p class="text-xs text-gray-500 mt-1">JSON 数组格式，包含 id, name, description, icon 字段</p>
+                            </div>
+                        </div>
+                        <div class="mt-6 flex justify-end">
+                            <button onclick="updateAISettings()" class="px-8 py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-sm font-bold shadow-lg transition-all">
+                                <i class="fas fa-save mr-2"></i> 保存 AI 配置
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- System Settings -->
+                    <div class="glass-panel rounded-2xl p-8 shadow-2xl">
+                        <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                            <span class="w-8 h-8 rounded bg-green-500/20 flex items-center justify-center text-green-400"><i class="fas fa-server"></i></span>
+                            系统配置
+                        </h3>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold text-gray-400 ml-1">站点名称</label>
+                                <input id="systemSiteName" placeholder="Nano Banana" class="w-full input-dark rounded-xl px-4 py-3">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold text-gray-400 ml-1">前端地址</label>
+                                <input id="systemFrontendUrl" placeholder="https://example.com" class="w-full input-dark rounded-xl px-4 py-3">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold text-gray-400 ml-1">批量并发数 (1-10)</label>
+                                <input id="systemBatchConcurrency" type="number" min="1" max="10" placeholder="3" class="w-full input-dark rounded-xl px-4 py-3">
+                            </div>
+                        </div>
+                        <div class="mt-6 flex justify-end">
+                            <button onclick="updateSystemSettings()" class="px-8 py-2.5 bg-green-600 hover:bg-green-500 text-white rounded-xl text-sm font-bold shadow-lg transition-all">
+                                <i class="fas fa-save mr-2"></i> 保存系统配置
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. 批量配置 -->
                 <div id="batch-config" class="section hidden fade-in space-y-8">
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         <!-- 并发数配置 -->
@@ -486,6 +588,7 @@ router.get('/panel', (req, res) => {
                 'users': '用户管理',
                 'inspirations': '灵感创意库',
                 'notices': '系统公告中心',
+                'settings': '系统设置',
                 'batch-config': '批量图生图配置',
                 'batch-monitor': '批量任务监控'
             };
@@ -494,6 +597,7 @@ router.get('/panel', (req, res) => {
             if(name === 'users') loadUsers();
             if(name === 'inspirations') loadInspirations();
             if(name === 'notices') loadNotices();
+            if(name === 'settings') loadSettings();
             if(name === 'batch-config') { loadConcurrency(); loadPresets(); }
             if(name === 'batch-monitor') { loadBatchStats(); loadBatchQueues(); }
         }
@@ -603,7 +707,170 @@ router.get('/panel', (req, res) => {
         }
         async function delNotice(id) { if(confirm('删除此公告？')) { await fetch('/api/admin/announcements/'+id, { method:'DELETE', headers:{'Authorization':'Bearer '+TOKEN} }); loadNotices(); } }
 
-        // --- 4. 批量配置逻辑 ---
+        // --- 4. 系统设置逻辑 ---
+        async function loadSettings() {
+            try {
+                const res = await fetch('/api/admin/settings', { headers:{'Authorization':'Bearer '+TOKEN} });
+                const d = await res.json();
+                if(d.success) {
+                    const settings = d.data;
+
+                    // Load Mail settings
+                    if(settings.mail) {
+                        document.getElementById('mailHost').value = settings.mail.host || '';
+                        document.getElementById('mailPort').value = settings.mail.port || '';
+                        document.getElementById('mailUser').value = settings.mail.user || '';
+                        document.getElementById('mailPass').value = settings.mail.pass || '';
+                        document.getElementById('mailFrom').value = settings.mail.from || '';
+                        document.getElementById('mailBrandName').value = settings.mail.brand_name || '';
+                    }
+
+                    // Load AI settings
+                    if(settings.ai) {
+                        document.getElementById('aiApiBaseUrl').value = settings.ai.api_base_url || '';
+                        document.getElementById('aiApiKey').value = settings.ai.api_key || '';
+                        document.getElementById('aiModels').value = settings.ai.models || '';
+                    }
+
+                    // Load System settings
+                    if(settings.system) {
+                        document.getElementById('systemSiteName').value = settings.system.site_name || '';
+                        document.getElementById('systemFrontendUrl').value = settings.system.frontend_url || '';
+                        document.getElementById('systemBatchConcurrency').value = settings.system.batch_concurrency || '3';
+                    }
+                }
+            } catch(e) {
+                console.error('加载设置失败:', e);
+                alert('加载设置失败: ' + e.message);
+            }
+        }
+
+        async function updateMailSettings() {
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 保存中...';
+            btn.disabled = true;
+
+            try {
+                const data = {
+                    host: document.getElementById('mailHost').value.trim(),
+                    port: parseInt(document.getElementById('mailPort').value),
+                    user: document.getElementById('mailUser').value.trim(),
+                    pass: document.getElementById('mailPass').value.trim(),
+                    from: document.getElementById('mailFrom').value.trim(),
+                    brand_name: document.getElementById('mailBrandName').value.trim()
+                };
+
+                const res = await fetch('/api/admin/settings/mail', {
+                    method:'POST',
+                    headers:{'Content-Type':'application/json','Authorization':'Bearer '+TOKEN},
+                    body: JSON.stringify(data)
+                });
+
+                if(res.ok) {
+                    alert('邮件配置已更新');
+                } else {
+                    const error = await res.json();
+                    alert('更新失败: ' + (error.error || '未知错误'));
+                }
+            } catch(e) {
+                alert('更新失败: ' + e.message);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        async function updateAISettings() {
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 保存中...';
+            btn.disabled = true;
+
+            try {
+                const modelsText = document.getElementById('aiModels').value.trim();
+                let modelsData = modelsText;
+
+                // Validate JSON if provided
+                if(modelsText) {
+                    try {
+                        JSON.parse(modelsText);
+                    } catch(e) {
+                        alert('模型列表 JSON 格式错误: ' + e.message);
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                        return;
+                    }
+                }
+
+                const data = {
+                    api_base_url: document.getElementById('aiApiBaseUrl').value.trim(),
+                    api_key: document.getElementById('aiApiKey').value.trim(),
+                    models: modelsData
+                };
+
+                const res = await fetch('/api/admin/settings/ai', {
+                    method:'POST',
+                    headers:{'Content-Type':'application/json','Authorization':'Bearer '+TOKEN},
+                    body: JSON.stringify(data)
+                });
+
+                if(res.ok) {
+                    alert('AI 配置已更新');
+                } else {
+                    const error = await res.json();
+                    alert('更新失败: ' + (error.error || '未知错误'));
+                }
+            } catch(e) {
+                alert('更新失败: ' + e.message);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        async function updateSystemSettings() {
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 保存中...';
+            btn.disabled = true;
+
+            try {
+                const concurrency = parseInt(document.getElementById('systemBatchConcurrency').value);
+                if(concurrency && (concurrency < 1 || concurrency > 10)) {
+                    alert('批量并发数必须在1-10之间');
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    return;
+                }
+
+                const data = {
+                    site_name: document.getElementById('systemSiteName').value.trim(),
+                    frontend_url: document.getElementById('systemFrontendUrl').value.trim(),
+                    batch_concurrency: concurrency
+                };
+
+                const res = await fetch('/api/admin/settings/system', {
+                    method:'POST',
+                    headers:{'Content-Type':'application/json','Authorization':'Bearer '+TOKEN},
+                    body: JSON.stringify(data)
+                });
+
+                if(res.ok) {
+                    alert('系统配置已更新');
+                } else {
+                    const error = await res.json();
+                    alert('更新失败: ' + (error.error || '未知错误'));
+                }
+            } catch(e) {
+                alert('更新失败: ' + e.message);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        // --- 5. 批量配置逻辑 ---
         async function loadConcurrency() {
             try {
                 const res = await fetch('/api/admin/config/concurrency', { headers:{'Authorization':'Bearer '+TOKEN} });
@@ -883,6 +1150,148 @@ router.get('/batch/stats', authenticateToken, requireAdmin, async (req, res) => 
         `);
         res.json({success:true, data: stats[0]});
     } catch(e){res.status(500).json({error: e.message});}
+});
+
+// ================= Runtime System Settings Management =================
+
+// Get all system settings grouped by category
+router.get('/settings', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const [rows] = await pool.execute('SELECT config_key, config_value, description FROM system_config');
+
+        // Group settings by category
+        const settings = {
+            mail: {},
+            ai: {},
+            system: {}
+        };
+
+        rows.forEach(row => {
+            const key = row.config_key;
+            const value = row.config_value;
+
+            // Mail settings
+            if (key.startsWith('mail_')) {
+                settings.mail[key.replace('mail_', '')] = value;
+            }
+            // AI settings
+            else if (key.startsWith('ai_')) {
+                settings.ai[key.replace('ai_', '')] = value;
+            }
+            // System settings
+            else if (key.startsWith('system_')) {
+                settings.system[key.replace('system_', '')] = value;
+            }
+            // Batch settings (keep for backward compatibility)
+            else if (key === 'batch_concurrency') {
+                settings.system.batch_concurrency = value;
+            }
+        });
+
+        res.json({success: true, data: settings});
+    } catch(e) {
+        res.status(500).json({error: e.message});
+    }
+});
+
+// Update mail settings
+router.post('/settings/mail', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const { host, port, user, pass, from, brand_name } = req.body;
+
+        const updates = [];
+        if (host !== undefined) updates.push(['mail_host', host, 'SMTP server address']);
+        if (port !== undefined) updates.push(['mail_port', port.toString(), 'SMTP port']);
+        if (user !== undefined) updates.push(['mail_user', user, 'Sender email address']);
+        if (pass !== undefined) updates.push(['mail_pass', pass, 'Email authorization code']);
+        if (from !== undefined) updates.push(['mail_from', from, 'Sender display name and email']);
+        if (brand_name !== undefined) updates.push(['mail_brand_name', brand_name, 'Email brand name']);
+
+        for (const [key, value, desc] of updates) {
+            await pool.execute(
+                'INSERT INTO system_config (config_key, config_value, description) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE config_value = ?, description = ?',
+                [key, value, desc, value, desc]
+            );
+        }
+
+        res.json({success: true, message: 'Mail settings updated successfully'});
+    } catch(e) {
+        res.status(500).json({error: e.message});
+    }
+});
+
+// Update AI settings
+router.post('/settings/ai', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const { api_base_url, api_key, models } = req.body;
+
+        const updates = [];
+        if (api_base_url !== undefined) updates.push(['ai_api_base_url', api_base_url, 'AI API base URL']);
+        if (api_key !== undefined) updates.push(['ai_api_key', api_key, 'AI API key']);
+        if (models !== undefined) {
+            const modelsJson = typeof models === 'string' ? models : JSON.stringify(models);
+            updates.push(['ai_models', modelsJson, 'Available image generation models (JSON array)']);
+        }
+
+        for (const [key, value, desc] of updates) {
+            await pool.execute(
+                'INSERT INTO system_config (config_key, config_value, description) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE config_value = ?, description = ?',
+                [key, value, desc, value, desc]
+            );
+        }
+
+        res.json({success: true, message: 'AI settings updated successfully'});
+    } catch(e) {
+        res.status(500).json({error: e.message});
+    }
+});
+
+// Update system settings
+router.post('/settings/system', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const { site_name, frontend_url, batch_concurrency } = req.body;
+
+        const updates = [];
+        if (site_name !== undefined) updates.push(['system_site_name', site_name, 'Site name']);
+        if (frontend_url !== undefined) updates.push(['system_frontend_url', frontend_url, 'Frontend URL for CORS']);
+        if (batch_concurrency !== undefined) {
+            const concurrency = parseInt(batch_concurrency);
+            if (concurrency < 1 || concurrency > 10) {
+                return res.status(400).json({error: 'Batch concurrency must be between 1 and 10'});
+            }
+            updates.push(['batch_concurrency', concurrency.toString(), 'Batch image generation concurrency']);
+
+            // Update queue service concurrency
+            const queueService = require('../services/queueService');
+            await queueService.updateConcurrency(concurrency);
+        }
+
+        for (const [key, value, desc] of updates) {
+            await pool.execute(
+                'INSERT INTO system_config (config_key, config_value, description) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE config_value = ?, description = ?',
+                [key, value, desc, value, desc]
+            );
+        }
+
+        res.json({success: true, message: 'System settings updated successfully'});
+    } catch(e) {
+        res.status(500).json({error: e.message});
+    }
+});
+
+// Get specific setting value
+router.get('/settings/:key', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const [rows] = await pool.execute('SELECT config_value FROM system_config WHERE config_key = ?', [req.params.key]);
+
+        if (rows.length === 0) {
+            return res.status(404).json({error: 'Setting not found'});
+        }
+
+        res.json({success: true, data: { value: rows[0].config_value }});
+    } catch(e) {
+        res.status(500).json({error: e.message});
+    }
 });
 
 module.exports = router;

@@ -1,0 +1,250 @@
+{
+  "summary": "Implement .env-based admin configuration with hybrid authentication approach. Admin credentials (email/password) will be configured via environment variables and auto-created in database. Add runtime system settings management through admin panel with grouped sections (Mail, AI, System). Replace hardcoded values with configurable environment variables and extend testing to cover new functionality.",
+  "approach": "Follow hybrid authentication pattern: admin users auto-created from .env at startup and stored in database for seamless integration with existing JWT-based auth system. Implement runtime configuration updates using system_config table to avoid server restarts. Update admin panel HTML to reference environment variables directly. Extend existing bash script testing pattern for comprehensive coverage.",
+  "tasks": [
+    {
+      "id": "T1",
+      "title": "Configure environment variables for admin credentials",
+      "scope": "Environment configuration",
+      "action": "Configure",
+      "description": "Add ADMIN_EMAIL and ADMIN_PASSWORD to .env.example with clear documentation. Update environment loading patterns to support admin credential configuration.",
+      "modification_points": [
+        {
+          "file": ".env.example",
+          "target": "Admin Configuration section",
+          "change": "Add ADMIN_EMAIL and ADMIN_PASSWORD variables with descriptions"
+        },
+        {
+          "file": "config/database.js",
+          "target": "Environment loading (line 7)",
+          "change": "Verify dotenv.config() loads admin credentials from .env"
+        }
+      ],
+      "implementation": [
+        "Read current .env.example structure to understand existing patterns",
+        "Add ADMIN_EMAIL and ADMIN_PASSWORD variables with clear descriptions",
+        "Include example values and documentation for admin setup",
+        "Verify environment variable loading in config/database.js",
+        "Test environment variable access via process.env"
+      ],
+      "reference": {
+        "pattern": "Environment variable patterns from services/mailService.js",
+        "files": ["services/mailService.js", ".env.example", "config/database.js"],
+        "examples": "Follow mail service env var patterns (lines 6, 10-11, 16-18)"
+      },
+      "acceptance": [
+        "ADMIN_EMAIL and ADMIN_PASSWORD added to .env.example with documentation",
+        "Environment variables load correctly via process.env",
+        "Follows existing .env.example formatting and commenting patterns"
+      ],
+      "depends_on": []
+    },
+    {
+      "id": "T2",
+      "title": "Implement hybrid admin authentication from .env",
+      "scope": "Admin authentication system",
+      "action": "Implement",
+      "description": "Modify admin authentication to support .env-based credentials with automatic admin user creation in database. Implement startup logic to check and create admin user from environment variables.",
+      "modification_points": [
+        {
+          "file": "routes/admin.js",
+          "target": "Admin authentication (lines 448)",
+          "change": "Update admin login to validate against .env credentials or database"
+        },
+        {
+          "file": "routes/admin.js",
+          "target": "Startup initialization (before route definitions)",
+          "change": "Add auto-create admin user from .env logic"
+        },
+        {
+          "file": "routes/auth.js",
+          "target": "Login endpoint (lines 145-161)",
+          "change": "Extend validation to check .env admin credentials"
+        }
+      ],
+      "implementation": [
+        "Analyze current admin authentication flow (routes/admin.js:448)",
+        "Implement startup check to create admin from ADMIN_EMAIL/ADMIN_PASSWORD in database",
+        "Update admin login validation to check .env credentials as fallback",
+        "Ensure JWT token generation works for .env-based admin users",
+        "Handle password hashing for .env admin credentials (bcrypt)"
+      ],
+      "reference": {
+        "pattern": "Hybrid authentication with database persistence",
+        "files": ["routes/admin.js", "routes/auth.js", "models/User.js"],
+        "examples": "JWT authentication pattern from routes/auth.js:14-24, role verification from routes/admin.js:766"
+      },
+      "acceptance": [
+        "Admin user auto-created from .env credentials at startup if not exists",
+        "Admin login works with .env ADMIN_EMAIL and ADMIN_PASSWORD",
+        "JWT tokens generated correctly for .env-based admin users",
+        "Existing database admin users continue to work"
+      ],
+      "depends_on": ["T1"]
+    },
+    {
+      "id": "T3",
+      "title": "Implement runtime system settings management",
+      "scope": "System configuration API",
+      "action": "Implement",
+      "description": "Extend existing system_config API pattern to support runtime configuration updates. Create grouped settings sections (Mail, AI, System) and implement database-backed configuration storage without requiring server restart.",
+      "modification_points": [
+        {
+          "file": "routes/admin.js",
+          "target": "system_config API endpoints (lines 832-855)",
+          "change": "Extend endpoints to support all system configuration categories"
+        },
+        {
+          "file": "routes/admin.js",
+          "target": "Admin panel embedded HTML",
+          "change": "Add system settings page with grouped sections (Mail, AI, System)"
+        }
+      ],
+      "implementation": [
+        "Review existing system_config API pattern (routes/admin.js:832-855)",
+        "Create configuration management endpoints for runtime updates",
+        "Implement settings categories: Mail (templates, branding), AI (providers, models), System (site name, features)",
+        "Add database schema for system_config table if not exists",
+        "Ensure configuration changes take effect without server restart"
+      ],
+      "reference": {
+        "pattern": "RESTful API with JSON responses and error handling",
+        "files": ["routes/admin.js", ".env.example"],
+        "examples": "system_config pattern from lines 832-855, environment config patterns from .env.example"
+      },
+      "acceptance": [
+        "Runtime configuration updates via REST API endpoints",
+        "Settings organized in grouped sections (Mail, AI, System)",
+        "Configuration stored in database and persists across restarts",
+        "No server restart required for configuration changes"
+      ],
+      "depends_on": ["T2"]
+    },
+    {
+      "id": "T4",
+      "title": "Update admin panel UI to use environment variables",
+      "scope": "Admin panel frontend",
+      "action": "Update",
+      "description": "Replace hardcoded admin email in admin panel HTML with process.env.ADMIN_EMAIL. Update panel to display and manage system settings through grouped interface.",
+      "modification_points": [
+        {
+          "file": "routes/admin.js",
+          "target": "Admin panel HTML (line 109)",
+          "change": "Replace hardcoded email with process.env.ADMIN_EMAIL"
+        },
+        {
+          "file": "routes/admin.js",
+          "target": "Admin panel embedded HTML (lines 12-755)",
+          "change": "Add settings management UI with grouped sections"
+        }
+      ],
+      "implementation": [
+        "Locate hardcoded admin email in admin panel HTML (routes/admin.js:109)",
+        "Replace hardcoded value with process.env.ADMIN_EMAIL reference",
+        "Design settings management interface with grouped sections",
+        "Implement JavaScript for API calls to system settings endpoints",
+        "Add form validation and error handling for settings updates"
+      ],
+      "reference": {
+        "pattern": "Embedded HTML with JavaScript API integration",
+        "files": ["routes/admin.js"],
+        "examples": "Existing admin panel structure (lines 12-755), JavaScript API calls pattern"
+      },
+      "acceptance": [
+        "Admin panel displays correct email from .env (not hardcoded)",
+        "Settings UI allows updating Mail, AI, and System configurations",
+        "Changes apply immediately without page reload",
+        "UI follows existing admin panel design patterns"
+      ],
+      "depends_on": ["T3"]
+    },
+    {
+      "id": "T5",
+      "title": "Extend testing coverage for admin environment configuration",
+      "scope": "Testing infrastructure",
+      "action": "Test",
+      "description": "Extend existing bash script testing pattern to cover admin environment configuration. Add tests for .env-based admin authentication and system settings management.",
+      "modification_points": [
+        {
+          "file": "scripts/test-batch-api.sh",
+          "target": "Admin login test (lines 56-73)",
+          "change": "Update to use ADMIN_EMAIL/ADMIN_PASSWORD from .env"
+        },
+        {
+          "file": "scripts/test-batch-api.sh",
+          "target": "Test suite",
+          "change": "Add tests for system settings API endpoints"
+        }
+      ],
+      "implementation": [
+        "Review existing test script pattern (scripts/test-batch-api.sh:56-73)",
+        "Update admin login test to source credentials from .env",
+        "Add tests for system settings endpoints (GET, POST, PUT)",
+        "Add tests for runtime configuration updates",
+        "Ensure tests validate grouped settings (Mail, AI, System)"
+      ],
+      "reference": {
+        "pattern": "Bash curl-based API testing",
+        "files": ["scripts/test-batch-api.sh", ".env.example"],
+        "examples": "Existing admin login test pattern (lines 56-73), JWT token extraction (lines 65, 77)"
+      },
+      "acceptance": [
+        "Tests source admin credentials from .env file",
+        "Admin authentication test passes with .env credentials",
+        "System settings API tests validate all CRUD operations",
+        "Tests confirm runtime updates work without restart"
+      ],
+      "depends_on": ["T2", "T3"]
+    }
+  ],
+  "flow_control": {
+    "execution_order": [
+      {
+        "phase": "sequential-1",
+        "tasks": ["T1"],
+        "type": "sequential"
+      },
+      {
+        "phase": "sequential-2",
+        "tasks": ["T2"],
+        "type": "sequential"
+      },
+      {
+        "phase": "parallel-1",
+        "tasks": ["T3", "T5"],
+        "type": "parallel"
+      },
+      {
+        "phase": "sequential-3",
+        "tasks": ["T4"],
+        "type": "sequential"
+      }
+    ],
+    "exit_conditions": {
+      "success": "All tasks completed with acceptance criteria met",
+      "failure": "Critical task fails (T1-T5) or acceptance criteria not met"
+    }
+  },
+  "focus_paths": [
+    ".env.example",
+    "config/database.js",
+    "routes/admin.js",
+    "routes/auth.js",
+    "models/User.js",
+    "scripts/test-batch-api.sh"
+  ],
+  "estimated_time": "3-4 hours",
+  "recommended_execution": "Agent",
+  "complexity": "Medium",
+  "_metadata": {
+    "timestamp": "2025-12-10T19:46:00.000Z",
+    "source": "direct-planning",
+    "planning_mode": "direct",
+    "exploration_angles": [
+      "auth-patterns",
+      "integration-points",
+      "testing"
+    ],
+    "duration_seconds": 120
+  }
+}

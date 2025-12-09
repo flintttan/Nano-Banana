@@ -1,38 +1,43 @@
 // services/mailService.js
 const nodemailer = require('nodemailer');
+const configService = require('./configService');
 
-// 1. 创建发送器 (读取 .env 里的配置)
-const transporter = nodemailer.createTransport({
-    host: process.env.MAIL_HOST,
-    port: parseInt(process.env.MAIL_PORT) || 465,
-    secure: true, // 465端口必须为true
-    auth: {
-        user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS
-    }
-});
+// Create transporter with runtime configuration support
+async function createTransporter() {
+    const mailConfig = await configService.getMailConfig();
 
-// 统一品牌名称配置：用于邮件内容、标题等展示
-const MAIL_BRAND_NAME = process.env.MAIL_BRAND_NAME || 'Nano Banana';
-// 发件人邮箱头: 优先使用 MAIL_FROM（完整的 `名称 <邮箱>`），否则使用品牌名 + 官方后缀
-const MAIL_FROM_HEADER = process.env.MAIL_FROM || `"${MAIL_BRAND_NAME} 官方" <${process.env.MAIL_USER}>`;
+    return nodemailer.createTransport({
+        host: mailConfig.host,
+        port: mailConfig.port,
+        secure: mailConfig.port === 465,
+        auth: {
+            user: mailConfig.user,
+            pass: mailConfig.pass
+        }
+    });
+}
 
 /**
- * 发送验证码邮件
- * @param {string} toEmail - 接收者邮箱
- * @param {string} code - 6位数字验证码
+ * Send verification code email
+ * @param {string} toEmail - Recipient email address
+ * @param {string} code - 6-digit verification code
  */
 exports.sendVerificationEmail = async (toEmail, code) => {
-    // 邮件内容配置
+    const mailConfig = await configService.getMailConfig();
+    const brandName = mailConfig.brandName;
+    const fromHeader = mailConfig.from || `"${brandName} 官方" <${mailConfig.user}>`;
+
+    const transporter = await createTransporter();
+
     const mailOptions = {
-        from: MAIL_FROM_HEADER, // 发件人必须和认证账号一致
+        from: fromHeader,
         to: toEmail,
-        subject: `【${MAIL_BRAND_NAME}】您的注册验证码`,
+        subject: `【${brandName}】您的注册验证码`,
         html: `
             <div style="background-color:#f3f4f6; padding: 20px; font-family: sans-serif;">
                 <div style="max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                     <div style="background: linear-gradient(to right, #8B5CF6, #3B82F6); padding: 20px; text-align: center;">
-                        <h1 style="color: #ffffff; margin: 0; font-size: 20px;">${MAIL_BRAND_NAME}</h1>
+                        <h1 style="color: #ffffff; margin: 0; font-size: 20px;">${brandName}</h1>
                     </div>
                     <div style="padding: 30px; text-align: center; color: #374151;">
                         <p style="margin-bottom: 20px; font-size: 16px;">欢迎注册！您的验证码是：</p>
@@ -49,6 +54,5 @@ exports.sendVerificationEmail = async (toEmail, code) => {
         `
     };
 
-    // 发送动作
     return transporter.sendMail(mailOptions);
 };

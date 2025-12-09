@@ -1,14 +1,20 @@
-// services/aiService.js [v23 - 终极修复：强制尺寸生效版]
+// services/aiService.js [v24 - Runtime configuration support]
 
 const axios = require('axios');
 const FormData = require('form-data');
+const configService = require('./configService');
 
 class AIService {
   constructor() {
-    // 系统默认配置
+    // Fallback to environment variables
     this.defaultBaseURL = process.env.AI_API_BASE_URL;
     this.defaultApiKey = process.env.AI_API_KEY;
-    this.timeout = 600000; // 延长超时时间到10分钟，避免大图生成过早超时
+    this.timeout = 600000; // 10 minutes timeout for large image generation
+  }
+
+  // Get runtime AI configuration
+  async getAIConfig() {
+    return await configService.getAIConfig();
   }
 
   // 创建axios实例
@@ -44,9 +50,9 @@ class AIService {
 
   // ✅ 文生图：改为使用 OpenAI /v1/chat/completions 接口规范
   async generateImage(params) {
-    const { 
-      prompt, 
-      model = 'gemini-2.5-flash-image', 
+    const {
+      prompt,
+      model = 'gemini-2.5-flash-image',
       size,          // 旧参数，仅用于本地记录，不再传给上游
       width,         // 前端宽度，仅用于本地记录
       height,        // 前端高度，仅用于本地记录
@@ -54,8 +60,10 @@ class AIService {
       baseUrl = null
     } = params;
 
-    const finalApiKey = apiKey || this.defaultApiKey;
-    const finalBaseURL = baseUrl || this.defaultBaseURL;
+    // Load runtime configuration if not provided
+    const aiConfig = await this.getAIConfig();
+    const finalApiKey = apiKey || aiConfig.apiKey || this.defaultApiKey;
+    const finalBaseURL = baseUrl || aiConfig.apiBaseUrl || this.defaultBaseURL;
 
     // chat/completions 文生图：严格对齐提供的规范，只发送 model + messages
     const requestData = {
@@ -110,12 +118,12 @@ class AIService {
 
   // ✅ 图生图：改为使用 OpenAI /v1/chat/completions 接口规范
   async editImage(params) {
-    const { 
-      prompt, 
-      image, 
-      images, 
-      model, 
-      size, 
+    const {
+      prompt,
+      image,
+      images,
+      model,
+      size,
       width,         // 仅用于本地记录
       height,        // 仅用于本地记录
       originalName = 'upload.png',
@@ -123,8 +131,10 @@ class AIService {
       baseUrl = null
     } = params;
 
-    const finalApiKey = apiKey || this.defaultApiKey;
-    const finalBaseURL = baseUrl || this.defaultBaseURL;
+    // Load runtime configuration if not provided
+    const aiConfig = await this.getAIConfig();
+    const finalApiKey = apiKey || aiConfig.apiKey || this.defaultApiKey;
+    const finalBaseURL = baseUrl || aiConfig.apiBaseUrl || this.defaultBaseURL;
 
     // chat/completions 下，图片通过富文本 content 传递为 base64 data-url
     let finalSize = size;
@@ -346,13 +356,15 @@ class AIService {
     }
   }
 
-  // 获取可用模型（优先从环境变量 IMAGE_MODELS 读取）
+  // 获取可用模型（优先从数据库配置读取，回退到环境变量）
   async getAvailableModels() {
-    const envModels = process.env.IMAGE_MODELS;
+    // Try to load from database configuration first
+    const aiConfig = await this.getAIConfig();
+    const modelsConfig = aiConfig.models || process.env.IMAGE_MODELS;
 
-    if (envModels) {
+    if (modelsConfig) {
       try {
-        const parsed = JSON.parse(envModels);
+        const parsed = typeof modelsConfig === 'string' ? JSON.parse(modelsConfig) : modelsConfig;
         if (Array.isArray(parsed) && parsed.length > 0) {
           return parsed.map((m) => ({
             id: m.id,
@@ -362,7 +374,7 @@ class AIService {
           }));
         }
       } catch (error) {
-        console.error('IMAGE_MODELS 环境变量解析失败:', error.message);
+        console.error('Models configuration parsing failed:', error.message);
       }
     }
 

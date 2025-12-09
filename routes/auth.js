@@ -138,7 +138,7 @@ router.post('/register', async (req, res, next) => {
     }
 });
 
-// === 登录 API (保持不变) ===
+// === 登录 API (支持 .env 管理员凭证) ===
 router.post('/login', async (req, res, next) => {
     let connection;
     try {
@@ -146,18 +146,42 @@ router.post('/login', async (req, res, next) => {
         if (!email || !password) {
             return res.status(400).json({ success: false, error: '邮箱和密码不能为空' });
         }
-        
+
+        // 首先从数据库查找用户
         const [users] = await pool.execute('SELECT * FROM users WHERE email = ?', [email]);
-        
-        if (users.length === 0) {
-            return res.status(401).json({ success: false, error: '邮箱或密码错误' });
-        }
 
-        const user = users[0];
-        const isMatch = await bcrypt.compare(password, user.password);
+        let user = null;
+        let isEnvAdmin = false;
 
-        if (!isMatch) {
-            return res.status(401).json({ success: false, error: '邮箱或密码错误' });
+        if (users.length > 0) {
+            // 找到数据库用户，验证密码
+            user = users[0];
+            const isMatch = await bcrypt.compare(password, user.password);
+
+            if (!isMatch) {
+                return res.status(401).json({ success: false, error: '邮箱或密码错误' });
+            }
+        } else {
+            // 数据库中未找到用户，检查是否为 .env 配置的管理员
+            const envAdminEmail = process.env.ADMIN_EMAIL;
+            const envAdminPassword = process.env.ADMIN_PASSWORD;
+
+            if (envAdminEmail && envAdminPassword &&
+                email === envAdminEmail && password === envAdminPassword) {
+                // 匹配 .env 管理员凭证
+                isEnvAdmin = true;
+                user = {
+                    id: 0, // .env 管理员没有数据库 ID
+                    username: 'Admin',
+                    email: envAdminEmail,
+                    role: 'admin',
+                    drawing_points: 999999,
+                    creation_count: 0
+                };
+                console.log(`🔐 .env admin login: ${envAdminEmail}`);
+            } else {
+                return res.status(401).json({ success: false, error: '邮箱或密码错误' });
+            }
         }
 
         const userProfile = {
@@ -168,7 +192,7 @@ router.post('/login', async (req, res, next) => {
             drawing_points: user.drawing_points || 0,
             creation_count: user.creation_count || 0
         };
-        
+
         const token = jwt.sign(userProfile, process.env.JWT_SECRET, { expiresIn: '7d' });
 
         res.json({

@@ -10,6 +10,7 @@ require('dotenv').config();
 
 // 从导出的对象中，通过解构赋值获取数据库相关工具函数
 const { connectDB, ensureDatabaseInitialized } = require('./config/database');
+const { initializeAdminUser } = require('./utils/adminInit');
 
 const authRoutes = require('./routes/auth');
 const imageRoutes = require('./routes/image');
@@ -27,11 +28,12 @@ const PORT = process.env.PORT || 3000;
 
 const queueService = require('./services/queueService');
 
-// 在应用启动时串行执行：连接数据库 -> 初始化/检查表结构 -> 初始化队列服务
+// 在应用启动时串行执行：连接数据库 -> 初始化/检查表结构 -> 初始化管理员 -> 初始化队列服务
 (async () => {
   try {
     await connectDB();
     await ensureDatabaseInitialized();
+    await initializeAdminUser();
     await queueService.initialize();
   } catch (error) {
     console.error('⚠️ 应用启动初始化失败:', error.message || error);
