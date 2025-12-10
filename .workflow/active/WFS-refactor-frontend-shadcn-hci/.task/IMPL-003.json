@@ -1,0 +1,92 @@
+{
+  "id": "IMPL-003",
+  "title": "Set up new frontend/ package from template",
+  "status": "completed",
+  "context_package_path": ".workflow/active/WFS-refactor-frontend-shadcn-hci/.process/context-package.json",
+  "meta": {
+    "type": "feature",
+    "agent": "@code-developer",
+    "execution_group": "parallel-abc123",
+    "module": "frontend"
+  },
+  "context": {
+    "requirements": [
+      "Copy fe_template/boilerplate-shadcn-pro-main/ to frontend/ directory",
+      "Install dependencies from template package.json",
+      "Configure shadcn/ui components from components.json",
+      "Set up TypeScript configuration if present",
+      "Configure Tailwind CSS for styling",
+      "Set up Next.js or React build configuration"
+    ],
+    "focus_paths": [
+      "fe_template/boilerplate-shadcn-pro-main/",
+      "frontend/",
+      "package.json"
+    ],
+    "acceptance": [
+      "frontend/ directory created: verify by ls -d frontend/",
+      "Template files copied: verify by find frontend/ -type f | wc -l > 0",
+      "Dependencies installed: verify by ls node_modules/ | grep -E 'react|next|shadcn' | wc -l >= 3",
+      "Build configuration exists: verify by test -f frontend/next.config.js -o -f frontend/vite.config.js -o -f frontend/package.json"
+    ],
+    "depends_on": ["IMPL-001"],
+    "inherited": {
+      "from": "IMPL-001",
+      "context": ["Template structure analyzed", "Dependencies identified"]
+    },
+    "shared_context": {
+      "tech_stack": ["React", "Next.js", "shadcn/ui", "Tailwind CSS", "TypeScript", "npm"],
+      "build_system": "Next.js or Vite (based on template)",
+      "conventions": "HCI-based design with shadcn/ui component library"
+    },
+    "artifacts": [
+      {
+        "type": "template_analysis",
+        "source": "context_package",
+        "path": ".workflow/active/WFS-refactor-frontend-shadcn-hci/.process/context-package.json",
+        "priority": "high",
+        "usage": "Template structure and technology stack information",
+        "contains": "exploration_results.template_analysis"
+      }
+    ]
+  },
+  "flow_control": {
+    "pre_analysis": [
+      {
+        "step": "examine_template",
+        "action": "Analyze template configuration files",
+        "commands": ["Read(fe_template/boilerplate-shadcn-pro-main/package.json)", "Read(fe_template/boilerplate-shadcn-pro-main/components.json)"],
+        "output_to": "template_config",
+        "on_error": "fail"
+      }
+    ],
+    "implementation_approach": [
+      {
+        "step": 1,
+        "title": "Copy template to frontend/ directory",
+        "description": "Initialize new frontend package from shadcn template",
+        "modification_points": [
+          "Copy entire template directory to frontend/",
+          "Preserve directory structure: app/, components/, lib/, hooks/, contexts/",
+          "Copy configuration files: package.json, components.json, tailwind.config.js",
+          "Copy TypeScript configs if present"
+        ],
+        "logic_flow": [
+          "Copy template directory to frontend/",
+          "Verify all directories copied successfully",
+          "Install npm dependencies",
+          "Run shadcn/ui initialization if needed"
+        ],
+        "depends_on": [],
+        "output": "frontend_package_initialized"
+      }
+    ],
+    "target_files": [
+      "fe_template/boilerplate-shadcn-pro-main/",
+      "frontend/package.json",
+      "frontend/components.json",
+      "frontend/app/",
+      "frontend/components/"
+    ]
+  }
+}

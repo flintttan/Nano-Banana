@@ -1,0 +1,107 @@
+{
+  "id": "IMPL-001",
+  "title": "Analyze template structure and API integration requirements",
+  "status": "completed",
+  "context_package_path": ".workflow/active/WFS-refactor-frontend-shadcn-hci/.process/context-package.json",
+  "meta": {
+    "type": "analysis",
+    "agent": "@action-planning-agent",
+    "execution_group": "parallel-abc123",
+    "module": "frontend"
+  },
+  "context": {
+    "requirements": [
+      "Analyze fe_template/boilerplate-shadcn-pro-main/ structure: 4 directories (app/, components/, lib/, hooks/, contexts/)",
+      "Review 16 API endpoints across 4 categories: image_generation (5 endpoints), user_management (5 endpoints), admin_panel (6 endpoints), authentication (3 endpoints)",
+      "Extract 8 key pages requirements: /login, /register, /dashboard, /gallery, /profile, /admin, /api-keys, /dashboard",
+      "Document 7 existing files in public/ to be deleted: index.html, login.html, styles/ (4 files), scripts/ (2 files)",
+      "Map 4 API capability groups with their specific endpoints and data structures"
+    ],
+    "focus_paths": [
+      "fe_template/boilerplate-shadcn-pro-main/",
+      "routes/",
+      "public/",
+      "exploration_results"
+    ],
+    "acceptance": [
+      "Template structure documented: verify by ls fe_template/boilerplate-shadcn-pro-main/ | wc -l >= 4",
+      "API endpoints cataloged: verify by counting documented endpoints = 16",
+      "Page requirements mapped: verify by counting key pages = 8",
+      "Files-to-delete inventory complete: verify by counting listed files = 7"
+    ],
+    "depends_on": [],
+    "inherited": {
+      "from": null,
+      "context": []
+    },
+    "shared_context": {
+      "tech_stack": ["React", "Next.js", "shadcn/ui", "Tailwind CSS", "TypeScript"],
+      "api_integration": "Express.js backend with JWT authentication",
+      "conventions": "HCI-based design with minimal cognitive load"
+    },
+    "artifacts": [
+      {
+        "type": "exploration_results",
+        "source": "context_package",
+        "path": ".workflow/active/WFS-refactor-frontend-shadcn-hci/.process/context-package.json",
+        "priority": "highest",
+        "usage": "API capabilities and current frontend structure analysis",
+        "contains": "api_capabilities, current_frontend_structure, template_analysis, hci_design_requirements"
+      }
+    ]
+  },
+  "flow_control": {
+    "pre_analysis": [
+      {
+        "step": "load_context_package",
+        "action": "Load context package for comprehensive analysis",
+        "commands": ["Read(.workflow/active/WFS-refactor-frontend-shadcn-hci/.process/context-package.json)"],
+        "output_to": "context_package",
+        "on_error": "fail"
+      },
+      {
+        "step": "analyze_template_structure",
+        "action": "Examine template directory structure and components",
+        "commands": ["bash(find fe_template/boilerplate-shadcn-pro-main/ -type f -name '*.json' -o -name '*.js' -o -name '*.ts' -o -name '*.tsx' | head -20)"],
+        "output_to": "template_files",
+        "on_error": "fail"
+      },
+      {
+        "step": "analyze_api_endpoints",
+        "action": "Review Express routes to understand API structure",
+        "commands": ["bash(rg 'router\\.' routes/ --type js -n | head -30)"],
+        "output_to": "api_endpoints",
+        "on_error": "fail"
+      }
+    ],
+    "implementation_approach": [
+      {
+        "step": 1,
+        "title": "Document template architecture",
+        "description": "Create comprehensive documentation of template structure, dependencies, and component patterns",
+        "modification_points": [
+          "Create analysis report: fe_template-structure-analysis.md",
+          "Document 4 main directories: app/, components/, lib/, hooks/, contexts/",
+          "List template configuration files: package.json, components.json",
+          "Identify reusable components and patterns"
+        ],
+        "logic_flow": [
+          "Read template package.json and components.json",
+          "Analyze directory structure with file counts",
+          "Document component architecture and routing setup",
+          "Identify integration points with backend APIs"
+        ],
+        "depends_on": [],
+        "output": "template_analysis_report"
+      }
+    ],
+    "target_files": [
+      "fe_template/boilerplate-shadcn-pro-main/package.json",
+      "fe_template/boilerplate-shadcn-pro-main/components.json",
+      "routes/image.js",
+      "routes/user.js",
+      "routes/admin.js",
+      "routes/auth.js"
+    ]
+  }
+}

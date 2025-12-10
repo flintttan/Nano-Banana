@@ -1,0 +1,96 @@
+{
+  "id": "IMPL-010",
+  "title": "Update server.js static file configuration",
+  "status": "completed",
+  "context_package_path": ".workflow/active/WFS-refactor-frontend-shadcn-hci/.process/context-package.json",
+  "meta": {
+    "type": "refactor",
+    "agent": "@code-developer",
+    "execution_group": "parallel-abc123",
+    "module": "backend"
+  },
+  "context": {
+    "requirements": [
+      "Remove static file serving for old public/ directory",
+      "Configure static file serving for new frontend/dist/ or frontend/.next/ directory",
+      "Update Express middleware to serve React frontend",
+      "Set up proper SPA routing support with catch-all routes",
+      "Configure CORS for frontend-backend communication",
+      "Update API route prefix if needed",
+      "Test static file serving configuration"
+    ],
+    "focus_paths": [
+      "server.js",
+      "routes"
+    ],
+    "acceptance": [
+      "server.js updated: verify by grep -n 'static\\\\|serve' server.js | wc -l >= 1",
+      "Old public/ static serving removed: verify by grep -v 'public' server.js || echo 'public serving removed'",
+      "New frontend static serving configured: verify by grep -n 'frontend' server.js | wc -l >= 1",
+      "SPA routing configured: verify by grep -n 'fallback\\\\|catch' server.js | wc -l >= 1",
+      "CORS configured: verify by grep -n 'cors' server.js | wc -l >= 1"
+    ],
+    "depends_on": ["IMPL-009"],
+    "inherited": {
+      "from": "IMPL-009",
+      "context": ["Frontend fully implemented", "All pages and features complete"]
+    },
+    "shared_context": {
+      "tech_stack": ["Express.js", "Node.js"],
+      "serve_strategy": "Production build of React frontend",
+      "conventions": "SPA routing, CORS, proper middleware order"
+    },
+    "artifacts": [
+      {
+        "type": "server_configuration",
+        "source": "context_package",
+        "path": ".workflow/active/WFS-refactor-frontend-shadcn-hci/.process/context-package.json",
+        "priority": "medium",
+        "usage": "Server configuration reference",
+        "contains": "assets.source_code.server.js"
+      }
+    ]
+  },
+  "flow_control": {
+    "pre_analysis": [
+      {
+        "step": "review_server_config",
+        "action": "Analyze current server.js configuration",
+        "commands": ["Read(server.js | head -50)"],
+        "output_to": "server_config",
+        "on_error": "fail"
+      }
+    ],
+    "implementation_approach": [
+      {
+        "step": 1,
+        "title": "Update server.js for new frontend",
+        "description": "Configure Express to serve new React frontend",
+        "modification_points": [
+          "Remove public/ directory static serving",
+          "Add frontend build directory static serving",
+          "Configure SPA catch-all routing",
+          "Set up CORS middleware",
+          "Update middleware order (static before API routes)",
+          "Add environment-based configuration"
+        ],
+        "logic_flow": [
+          "Read current server.js configuration",
+          "Remove old public/ static serving",
+          "Add new frontend static file serving",
+          "Configure SPA fallback routing",
+          "Set up CORS for frontend origin",
+          "Test configuration changes",
+          "Verify frontend loads correctly"
+        ],
+        "depends_on": [],
+        "output": "server_config_updated"
+      }
+    ],
+    "target_files": [
+      "server.js",
+      "frontend/dist/",
+      "frontend/.next/"
+    ]
+  }
+}

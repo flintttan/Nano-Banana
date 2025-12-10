@@ -9,8 +9,24 @@ WORKDIR /app
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         curl \
+        git \
     && rm -rf /var/lib/apt/lists/*
 
+# ========== 构建前端 ==========
+# 复制前端目录（包含所有文件）
+COPY frontend/ ./frontend/
+
+# 在前端目录安装所有依赖（包括开发依赖）
+WORKDIR /app/frontend
+RUN npm install --legacy-peer-deps
+
+# 构建前端应用
+RUN npm run build
+
+# 返回根目录
+WORKDIR /app
+
+# ========== 构建后端 ==========
 # 复制 package.json 和 package-lock.json（如果存在）
 COPY package*.json ./
 
@@ -18,8 +34,12 @@ COPY package*.json ./
 RUN npm install --omit=dev && \
     npm cache clean --force
 
-# 复制应用源代码
-COPY . .
+# 复制应用源代码（前端已构建完成）
+COPY server.js ./
+COPY routes/ ./routes/
+COPY services/ ./services/
+COPY config/ ./config/
+COPY utils/ ./utils/
 
 # 创建必要的目录并设置权限，使用基础镜像内置的 node 用户
 RUN mkdir -p /app/uploads /app/logs && \

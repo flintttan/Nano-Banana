@@ -1,0 +1,105 @@
+{
+  "id": "IMPL-009",
+  "title": "Implement admin panel with user management",
+  "status": "pending",
+  "context_package_path": ".workflow/active/WFS-refactor-frontend-shadcn-hci/.process/context-package.json",
+  "meta": {
+    "type": "feature",
+    "agent": "@code-developer",
+    "execution_group": "parallel-abc123",
+    "module": "frontend"
+  },
+  "context": {
+    "requirements": [
+      "Create admin panel with protected admin-only route",
+      "Implement user management with GET /api/admin/users, PUT /api/admin/users/:id/status",
+      "Add user statistics display with GET /api/admin/users/stats",
+      "Create points adjustment interface with POST /api/admin/users/points",
+      "Implement announcements management with GET /api/admin/announcements",
+      "Add inspiration prompts management with GET /api/admin/inspirations",
+      "Create admin dashboard with system overview",
+      "Implement role-based access control and permission checks"
+    ],
+    "focus_paths": [
+      "frontend/app/admin/",
+      "frontend/components/admin/",
+      "routes/admin.js"
+    ],
+    "acceptance": [
+      "Admin page created: verify by test -f frontend/app/admin/page.tsx",
+      "User management component: verify by find frontend/components/admin/ -name '*User*' | wc -l >= 1",
+      "Admin API integration: verify by grep -r '/api/admin/' frontend/lib/ | wc -l >= 5",
+      "Role-based access control: verify by grep -r 'admin|role' frontend/lib/auth.ts | wc -l >= 1",
+      "Statistics dashboard: verify by find frontend/components/admin/ -name '*Stats*' -o -name '*Dashboard*' | wc -l >= 1"
+    ],
+    "depends_on": ["IMPL-008"],
+    "inherited": {
+      "from": "IMPL-008",
+      "context": ["Profile management implemented", "API integration patterns established", "User authentication working"]
+    },
+    "shared_context": {
+      "tech_stack": ["React", "Next.js", "shadcn/ui", "Tailwind CSS"],
+      "admin_features": "User management, statistics, announcements, inspirations",
+      "conventions": "Protected routes, role validation, data tables, admin-only access"
+    },
+    "artifacts": [
+      {
+        "type": "api_capabilities",
+        "source": "context_package",
+        "path": ".workflow/active/WFS-refactor-frontend-shadcn-hci/.process/context-package.json",
+        "priority": "high",
+        "usage": "Admin panel API endpoints specification",
+        "contains": "exploration_results.api_capabilities.admin_panel"
+      }
+    ]
+  },
+  "flow_control": {
+    "pre_analysis": [
+      {
+        "step": "analyze_admin_apis",
+        "action": "Review admin panel API structure",
+        "commands": ["Read(routes/admin.js | head -80)"],
+        "output_to": "admin_api_structure",
+        "on_error": "fail"
+      }
+    ],
+    "implementation_approach": [
+      {
+        "step": 1,
+        "title": "Implement admin panel",
+        "description": "Create admin panel with user management and system administration",
+        "modification_points": [
+          "Create admin page with protected route",
+          "Implement user management table with search and filter",
+          "Add user statistics dashboard with charts",
+          "Create points adjustment interface",
+          "Implement announcements management",
+          "Add inspiration prompts management",
+          "Implement role-based access control",
+          "Add admin navigation and sidebar"
+        ],
+        "logic_flow": [
+          "Create admin route protection middleware",
+          "Implement admin dashboard layout",
+          "Integrate GET /api/admin/users with pagination",
+          "Create user management interface with status toggle",
+          "Integrate statistics API with data visualization",
+          "Implement points adjustment functionality",
+          "Add announcements CRUD interface",
+          "Test admin panel functionality"
+        ],
+        "depends_on": [],
+        "output": "admin_panel_implemented"
+      }
+    ],
+    "target_files": [
+      "frontend/app/admin/page.tsx",
+      "frontend/components/admin/UserManagement.tsx",
+      "frontend/components/admin/AdminDashboard.tsx",
+      "frontend/components/admin/Statistics.tsx",
+      "frontend/components/admin/Announcements.tsx",
+      "frontend/lib/api.ts",
+      "routes/admin.js"
+    ]
+  }
+}

@@ -3,7 +3,8 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { pool } = require('../config/database');
-const mailService = require('../services/mailService'); 
+const mailService = require('../services/mailService');
+const configService = require('../services/configService');
 
 // ==========================================
 // VIP 通道：后台管理 (旗舰UI版)
@@ -355,7 +356,7 @@ router.get('/panel', (req, res) => {
                     <div class="glass-panel rounded-2xl p-8 shadow-2xl">
                         <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
                             <span class="w-8 h-8 rounded bg-purple-500/20 flex items-center justify-center text-purple-400"><i class="fas fa-brain"></i></span>
-                            AI 模型配置
+                            AI 接入与模型管理
                         </h3>
                         <div class="grid grid-cols-1 gap-6">
                             <div class="space-y-2">
@@ -367,14 +368,21 @@ router.get('/panel', (req, res) => {
                                 <input id="aiApiKey" type="password" placeholder="sk-..." class="w-full input-dark rounded-xl px-4 py-3">
                             </div>
                             <div class="space-y-2">
-                                <label class="text-xs font-bold text-gray-400 ml-1">模型列表 (JSON)</label>
-                                <textarea id="aiModels" rows="4" placeholder='[{"id":"model-1","name":"Model 1","description":"...","icon":"🚀"}]' class="w-full input-dark rounded-xl px-4 py-3 resize-none font-mono text-xs"></textarea>
-                                <p class="text-xs text-gray-500 mt-1">JSON 数组格式，包含 id, name, description, icon 字段</p>
+                                <label class="text-xs font-bold text-gray-400 ml-1">API 并发数 (1-50)</label>
+                                <input id="aiApiConcurrency" type="number" min="1" max="50" placeholder="5" class="w-full input-dark rounded-xl px-4 py-3">
+                                <p class="text-xs text-gray-500 mt-1">控制同时向第三方API发送的请求数量</p>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold text-gray-400 ml-1">模型管理</label>
+                                <p class="text-xs text-gray-500 mt-1">使用开关控制前台可用的模型，修改后 60 秒内前台模型列表会自动刷新。</p>
+                                <div id="modelManagerContainer" class="mt-2 space-y-2">
+                                    <div class="text-xs text-gray-500">正在加载模型列表...</div>
+                                </div>
                             </div>
                         </div>
                         <div class="mt-6 flex justify-end">
                             <button onclick="updateAISettings()" class="px-8 py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-sm font-bold shadow-lg transition-all">
-                                <i class="fas fa-save mr-2"></i> 保存 AI 配置
+                                <i class="fas fa-save mr-2"></i> 保存 AI 接入配置
                             </button>
                         </div>
                     </div>
@@ -731,7 +739,17 @@ router.get('/panel', (req, res) => {
                     if(settings.ai) {
                         document.getElementById('aiApiBaseUrl').value = settings.ai.api_base_url || '';
                         document.getElementById('aiApiKey').value = settings.ai.api_key || '';
-                        document.getElementById('aiModels').value = settings.ai.models || '';
+                    }
+
+                    // Load API concurrency
+                    try {
+                        const concurrencyRes = await fetch('/api/admin/config/api-concurrency', { headers:{'Authorization':'Bearer '+TOKEN} });
+                        const concurrencyData = await concurrencyRes.json();
+                        if(concurrencyData.success) {
+                            document.getElementById('aiApiConcurrency').value = concurrencyData.data.concurrency || '5';
+                        }
+                    } catch(e) {
+                        console.error('加载API并发数失败:', e);
                     }
 
                     // Load System settings
@@ -739,6 +757,13 @@ router.get('/panel', (req, res) => {
                         document.getElementById('systemSiteName').value = settings.system.site_name || '';
                         document.getElementById('systemFrontendUrl').value = settings.system.frontend_url || '';
                         document.getElementById('systemBatchConcurrency').value = settings.system.batch_concurrency || '3';
+                    }
+
+                    // Load model management list
+                    try {
+                        await loadModelManagement();
+                    } catch(e) {
+                        console.error('加载模型管理列表失败:', e);
                     }
                 }
             } catch(e) {
@@ -790,25 +815,9 @@ router.get('/panel', (req, res) => {
             btn.disabled = true;
 
             try {
-                const modelsText = document.getElementById('aiModels').value.trim();
-                let modelsData = modelsText;
-
-                // Validate JSON if provided
-                if(modelsText) {
-                    try {
-                        JSON.parse(modelsText);
-                    } catch(e) {
-                        alert('模型列表 JSON 格式错误: ' + e.message);
-                        btn.innerHTML = originalText;
-                        btn.disabled = false;
-                        return;
-                    }
-                }
-
                 const data = {
                     api_base_url: document.getElementById('aiApiBaseUrl').value.trim(),
-                    api_key: document.getElementById('aiApiKey').value.trim(),
-                    models: modelsData
+                    api_key: document.getElementById('aiApiKey').value.trim()
                 };
 
                 const res = await fetch('/api/admin/settings/ai', {
@@ -818,7 +827,26 @@ router.get('/panel', (req, res) => {
                 });
 
                 if(res.ok) {
-                    alert('AI 配置已更新');
+                    // Update API concurrency separately
+                    const apiConcurrency = parseInt(document.getElementById('aiApiConcurrency').value);
+                    if(apiConcurrency && apiConcurrency >= 1 && apiConcurrency <= 50) {
+                        try {
+                            const concurrencyRes = await fetch('/api/admin/config/api-concurrency', {
+                                method:'POST',
+                                headers:{'Content-Type':'application/json','Authorization':'Bearer '+TOKEN},
+                                body: JSON.stringify({ concurrency: apiConcurrency })
+                            });
+                            if(concurrencyRes.ok) {
+                                alert('AI 接入配置和API并发数已更新');
+                            } else {
+                                alert('AI 接入配置已更新，但API并发数更新失败');
+                            }
+                        } catch(e) {
+                            alert('AI 接入配置已更新，但API并发数更新失败: ' + e.message);
+                        }
+                    } else {
+                        alert('AI 接入配置已更新');
+                    }
                 } else {
                     const error = await res.json();
                     alert('更新失败: ' + (error.error || '未知错误'));
@@ -828,6 +856,73 @@ router.get('/panel', (req, res) => {
             } finally {
                 btn.innerHTML = originalText;
                 btn.disabled = false;
+            }
+        }
+
+        async function loadModelManagement() {
+            const container = document.getElementById('modelManagerContainer');
+            if (!container) return;
+
+            container.innerHTML = '<div class="text-xs text-gray-500">正在加载模型列表...</div>';
+
+            try {
+                const res = await fetch('/api/admin/models', { headers:{'Authorization':'Bearer '+TOKEN} });
+                const d = await res.json();
+
+                if (!d.success) {
+                    throw new Error(d.error || '加载模型列表失败');
+                }
+
+                const models = Array.isArray(d.data) ? d.data : [];
+
+                if (models.length === 0) {
+                    container.innerHTML = '<div class="text-xs text-gray-500">暂无可管理的模型，请联系开发者初始化数据库。</div>';
+                    return;
+                }
+
+                container.innerHTML = models.map(m => \`
+                    <div class="flex items-center justify-between p-3 rounded-xl bg-black/30 border border-white/5">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center text-xl">
+                                <span>\${m.icon || '✨'}</span>
+                            </div>
+                            <div>
+                                <div class="text-sm font-medium text-white">\${m.name || m.model_key}</div>
+                                <div class="text-xs text-gray-400 mt-0.5">\${m.description || '暂无描述'}</div>
+                                <div class="text-[10px] text-gray-500 mt-1">
+                                    模型ID: <span class="font-mono">\${m.model_key}</span>
+                                    · 积分消耗: <span class="font-semibold text-orange-400">\${m.credit_cost || m.creditCost || 1}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="toggleModelEnabled(\${m.id}, \${m.is_enabled === 1})"
+                                class="relative inline-flex items-center h-6 w-11 rounded-full border transition-colors \${m.is_enabled === 1 ? 'bg-green-500/80 border-green-400' : 'bg-gray-700 border-gray-500'}">
+                            <span class="sr-only">切换启用状态</span>
+                            <span class="inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform \${m.is_enabled === 1 ? 'translate-x-5' : 'translate-x-0'}"></span>
+                        </button>
+                    </div>
+                \`).join('');
+            } catch(e) {
+                console.error('加载模型管理列表失败:', e);
+                container.innerHTML = '<div class="text-xs text-red-400">加载模型列表失败：' + e.message + '</div>';
+            }
+        }
+
+        async function toggleModelEnabled(id, currentEnabled) {
+            try {
+                const res = await fetch('/api/admin/models/' + id + '/toggle', {
+                    method:'POST',
+                    headers:{'Content-Type':'application/json','Authorization':'Bearer '+TOKEN},
+                    body: JSON.stringify({ is_enabled: !currentEnabled })
+                });
+                const d = await res.json();
+                if(!res.ok || !d.success) {
+                    alert('更新模型状态失败: ' + (d.error || '未知错误'));
+                    return;
+                }
+                await loadModelManagement();
+            } catch(e) {
+                alert('更新模型状态失败: ' + e.message);
             }
         }
 
@@ -1335,6 +1430,28 @@ router.post('/config/concurrency', authenticateToken, requireAdmin, async (req, 
     } catch(e){res.status(500).json({error: e.message});}
 });
 
+// API提供商并发数配置
+router.get('/config/api-concurrency', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const [rows] = await pool.execute('SELECT config_value FROM system_config WHERE config_key = ?', ['api_concurrency']);
+        const concurrency = rows.length > 0 ? parseInt(rows[0].config_value) : 5;
+        res.json({success:true, data: { concurrency }});
+    } catch(e){res.status(500).json({error: e.message});}
+});
+
+router.post('/config/api-concurrency', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const { concurrency } = req.body;
+        if (!concurrency || concurrency < 1 || concurrency > 50) {
+            return res.status(400).json({error: 'API并发数必须在1-50之间'});
+        }
+        await pool.execute('INSERT INTO system_config (config_key, config_value, description) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE config_value = ?',
+            ['api_concurrency', concurrency.toString(), 'API提供商并发请求数限制', concurrency.toString()]);
+
+        res.json({success:true, message: 'API并发数已更新'});
+    } catch(e){res.status(500).json({error: e.message});}
+});
+
 // 批量任务监控
 router.get('/batch/queues', authenticateToken, requireAdmin, async (req, res) => {
     try {
@@ -1405,6 +1522,63 @@ router.get('/settings', authenticateToken, requireAdmin, async (req, res) => {
         res.json({success: true, data: settings});
     } catch(e) {
         res.status(500).json({error: e.message});
+    }
+});
+
+// AI 模型管理：获取所有模型（包含启用/禁用状态）
+router.get('/models', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const [rows] = await pool.execute(
+            'SELECT id, model_key, name, description, icon, is_enabled, credit_cost FROM model_management ORDER BY id ASC'
+        );
+
+        res.json({ success: true, data: rows });
+    } catch (e) {
+        console.error('Get models error:', e);
+        res.status(500).json({ success: false, error: 'Failed to load models' });
+    }
+});
+
+// AI 模型管理：切换模型启用/禁用状态
+router.post('/models/:id/toggle', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const modelId = req.params.id;
+        let { is_enabled } = req.body;
+
+        if (typeof is_enabled === 'string') {
+            is_enabled = is_enabled === 'true' || is_enabled === '1';
+        }
+
+        if (typeof is_enabled !== 'boolean') {
+            return res.status(400).json({ success: false, error: 'is_enabled must be a boolean value' });
+        }
+
+        const [result] = await pool.execute(
+            'UPDATE model_management SET is_enabled = ? WHERE id = ?',
+            [is_enabled ? 1 : 0, modelId]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ success: false, error: 'Model not found' });
+        }
+
+        // 清理模型缓存，确保 60 秒内前台模型列表更新
+        try {
+            configService.clearCache('enabled_models');
+        } catch (clearErr) {
+            console.error('Failed to clear enabled_models cache:', clearErr);
+        }
+
+        res.json({
+            success: true,
+            data: {
+                id: parseInt(modelId, 10),
+                is_enabled
+            }
+        });
+    } catch (e) {
+        console.error('Toggle model status error:', e);
+        res.status(500).json({ success: false, error: 'Failed to update model status' });
     }
 });
 

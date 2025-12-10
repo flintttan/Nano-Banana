@@ -1,0 +1,102 @@
+{
+  "id": "IMPL-006",
+  "title": "Implement dashboard and image generation workspace",
+  "status": "completed",
+  "context_package_path": ".workflow/active/WFS-refactor-frontend-shadcn-hci/.process/context-package.json",
+  "meta": {
+    "type": "feature",
+    "agent": "@code-developer",
+    "execution_group": "parallel-abc123",
+    "module": "frontend"
+  },
+  "context": {
+    "requirements": [
+      "Implement dashboard page with user statistics and quick actions",
+      "Create image generation workspace with text-to-image interface",
+      "Integrate 5 image generation APIs: POST /api/image/generate, POST /api/image/edit, POST /api/image/batch-edit, GET /api/image/history, DELETE /api/image/delete/:id",
+      "Implement image upload functionality for editing",
+      "Create image gallery preview on dashboard",
+      "Add generation queue display with real-time status updates",
+      "Implement prompt input with character count and suggestions"
+    ],
+    "focus_paths": [
+      "frontend/app/dashboard/",
+      "frontend/components/image/",
+      "frontend/app/workspace/",
+      "routes/image.js"
+    ],
+    "acceptance": [
+      "Dashboard page created: verify by test -f frontend/app/dashboard/page.tsx",
+      "Image generation component created: verify by find frontend/components/image/ -name '*.tsx' | wc -l >= 1",
+      "API integration implemented: verify by grep -r 'POST /api/image/generate' frontend/lib/ | wc -l >= 1",
+      "Upload functionality implemented: verify by grep -r 'upload|formdata' frontend/components/image/ | wc -l >= 1",
+      "Queue display component: verify by find frontend/components/ -name '*queue*' -o -name '*status*' | wc -l >= 1"
+    ],
+    "depends_on": ["IMPL-005"],
+    "inherited": {
+      "from": "IMPL-005",
+      "context": ["Authentication system implemented", "User login/register working", "JWT token management in place"]
+    },
+    "shared_context": {
+      "tech_stack": ["React", "Next.js", "shadcn/ui", "Tailwind CSS"],
+      "image_capabilities": "Text-to-image, image editing, batch operations",
+      "conventions": "Real-time updates, loading states, error handling, responsive grid"
+    },
+    "artifacts": [
+      {
+        "type": "api_capabilities",
+        "source": "context_package",
+        "path": ".workflow/active/WFS-refactor-frontend-shadcn-hci/.process/context-package.json",
+        "priority": "highest",
+        "usage": "Image generation API endpoints specification",
+        "contains": "exploration_results.api_capabilities.image_generation"
+      }
+    ]
+  },
+  "flow_control": {
+    "pre_analysis": [
+      {
+        "step": "analyze_image_apis",
+        "action": "Review image generation API structure",
+        "commands": ["Read(routes/image.js | head -80)"],
+        "output_to": "image_api_structure",
+        "on_error": "fail"
+      }
+    ],
+    "implementation_approach": [
+      {
+        "step": 1,
+        "title": "Implement dashboard and image generation",
+        "description": "Create dashboard with image generation workspace",
+        "modification_points": [
+          "Create dashboard page with user stats and recent images",
+          "Implement image generation form with prompt input",
+          "Create image upload component for editing",
+          "Implement generation queue with real-time status",
+          "Integrate all 5 image generation APIs",
+          "Add image preview and download functionality",
+          "Implement batch operations interface"
+        ],
+        "logic_flow": [
+          "Create dashboard layout with stats cards",
+          "Implement image generation form with validation",
+          "Create upload component for image editing",
+          "Integrate image generation APIs",
+          "Implement queue display with WebSocket or polling",
+          "Add image gallery with pagination",
+          "Test image generation workflow end-to-end"
+        ],
+        "depends_on": [],
+        "output": "dashboard_and_generation_implemented"
+      }
+    ],
+    "target_files": [
+      "frontend/app/dashboard/page.tsx",
+      "frontend/components/image/ImageGenerator.tsx",
+      "frontend/components/image/ImageUpload.tsx",
+      "frontend/components/image/GenerationQueue.tsx",
+      "frontend/lib/api.ts",
+      "routes/image.js"
+    ]
+  }
+}

@@ -1,0 +1,91 @@
+{
+  "id": "IMPL-002",
+  "title": "Delete existing public/ frontend files",
+  "status": "completed",
+  "context_package_path": ".workflow/active/WFS-refactor-frontend-shadcn-hci/.process/context-package.json",
+  "meta": {
+    "type": "refactor",
+    "agent": "@code-developer",
+    "execution_group": "parallel-abc123",
+    "module": "frontend"
+  },
+  "context": {
+    "requirements": [
+      "Delete 2 HTML files: index.html, login.html",
+      "Delete 4 CSS files: queue.css, canvas.css, sidebar.css, cards.css, workspace.css",
+      "Delete 2 JS files: workspace.js, api.js",
+      "Remove entire public/styles/ directory structure",
+      "Remove entire public/scripts/ directory structure"
+    ],
+    "focus_paths": [
+      "public",
+      "public/styles",
+      "public/scripts"
+    ],
+    "acceptance": [
+      "public/index.html deleted: verify by ls public/index.html 2>/dev/null || echo 'file not found'",
+      "public/login.html deleted: verify by ls public/login.html 2>/dev/null || echo 'file not found'",
+      "public/styles/ directory removed: verify by ls public/styles/ 2>/dev/null || echo 'directory not found'",
+      "public/scripts/ directory removed: verify by ls public/scripts/ 2>/dev/null || echo 'directory not found'",
+      "Total files remaining in public/: verify by ls public/ | wc -l = 0"
+    ],
+    "depends_on": ["IMPL-001"],
+    "inherited": {
+      "from": "IMPL-001",
+      "context": ["Template structure analysis completed", "API integration requirements documented"]
+    },
+    "shared_context": {
+      "tech_stack": ["Node.js", "Bash"],
+      "cleanup_strategy": "Complete removal of static frontend files",
+      "conventions": "Backup not required - functionality preserved in new React frontend"
+    },
+    "artifacts": [
+      {
+        "type": "exploration_results",
+        "source": "context_package",
+        "path": ".workflow/active/WFS-refactor-frontend-shadcn-hci/.process/context-package.json",
+        "priority": "high",
+        "usage": "Current frontend structure for deletion inventory",
+        "contains": "current_frontend_structure.files_to_delete"
+      }
+    ]
+  },
+  "flow_control": {
+    "pre_analysis": [
+      {
+        "step": "inventory_public_files",
+        "action": "List all files currently in public/ directory",
+        "commands": ["bash(find public/ -type f 2>/dev/null | wc -l)", "bash(ls -la public/ 2>/dev/null)"],
+        "output_to": "public_files_inventory",
+        "on_error": "fail"
+      }
+    ],
+    "implementation_approach": [
+      {
+        "step": 1,
+        "title": "Remove all public/ frontend files",
+        "description": "Delete all static frontend files to prepare for React replacement",
+        "modification_points": [
+          "Remove HTML files: public/index.html, public/login.html",
+          "Remove CSS directory: public/styles/ with all component styles",
+          "Remove JS directory: public/scripts/ with all scripts",
+          "Verify complete removal of all files"
+        ],
+        "logic_flow": [
+          "Delete index.html and login.html",
+          "Remove public/styles/ directory recursively",
+          "Remove public/scripts/ directory recursively",
+          "Verify directory is empty or contains only server-generated files"
+        ],
+        "depends_on": [],
+        "output": "clean_public_directory"
+      }
+    ],
+    "target_files": [
+      "public/index.html",
+      "public/login.html",
+      "public/styles",
+      "public/scripts"
+    ]
+  }
+}

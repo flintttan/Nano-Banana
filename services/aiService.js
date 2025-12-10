@@ -356,9 +356,30 @@ class AIService {
     }
   }
 
-  // 获取可用模型（优先从数据库配置读取，回退到环境变量）
+  // 获取可用模型
+  // 优先从独立的 model_management 表中读取启用模型
+  // 回退到 ai_models 配置或内置默认模型，保证服务可用
   async getAvailableModels() {
-    // Try to load from database configuration first
+    // 1) 尝试从 model_management 表加载启用模型
+    try {
+      if (typeof configService.getEnabledModels === 'function') {
+        const enabledModels = await configService.getEnabledModels();
+        if (Array.isArray(enabledModels) && enabledModels.length > 0) {
+          return enabledModels.map((m) => ({
+            id: m.id,
+            name: m.name || m.id,
+            description: m.description || '',
+            icon: m.icon || '✨',
+            // 预留给前端的积分消耗字段
+            creditCost: m.creditCost !== undefined ? m.creditCost : (m.credit_cost || null)
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load models from model_management:', error.message);
+    }
+
+    // 2) 回退到旧的 ai_models 配置（system_config / 环境变量）
     const aiConfig = await this.getAIConfig();
     const modelsConfig = aiConfig.models || process.env.IMAGE_MODELS;
 
@@ -367,10 +388,11 @@ class AIService {
         const parsed = typeof modelsConfig === 'string' ? JSON.parse(modelsConfig) : modelsConfig;
         if (Array.isArray(parsed) && parsed.length > 0) {
           return parsed.map((m) => ({
-            id: m.id,
-            name: m.name || m.id,
+            id: m.id || m.model_key || m.name,
+            name: m.name || m.id || m.model_key,
             description: m.description || '',
-            icon: m.icon || '✨'
+            icon: m.icon || '✨',
+            creditCost: m.creditCost || m.credit_cost || null
           }));
         }
       } catch (error) {
@@ -378,7 +400,7 @@ class AIService {
       }
     }
 
-    // 回退到内置模型配置，保证服务可用
+    // 3) 回退到内置模型配置，保证服务可用
     const modelData = {
       'gemini-2.5-flash-image': { name: 'Gemini 2.5 Flash Image', description: '默认生图模型（chat.completions）', icon: '🪐' },
       'nano-banana': { name: 'Nano Banana', description: '标准模式，生成速度快，适合日常使用', icon: '🍌' },
@@ -388,7 +410,33 @@ class AIService {
       'nano-banana-2-4k': { name: 'Nano Banana 2.0 (4K)', description: '4K 模式，极致细节视觉盛宴', icon: '💠' }
     };
 
-    return Object.keys(modelData).map((key) => ({ id: key, ...modelData[key] }));
+    return Object.keys(modelData).map((key) => ({ id: key, ...modelData[key], creditCost: null }));
+  }
+
+  // 计算批量操作的积分消耗
+  // - imageCount: 需要处理的图片数量
+  // - modelKey: 选用的模型 ID
+  // 返回 { perImageCost, totalCost }
+  async calculateBatchCost(imageCount, modelKey) {
+    const countNum = parseInt(imageCount, 10);
+    const safeCount = Number.isNaN(countNum) || countNum < 0 ? 0 : countNum;
+
+    let perImageCost = 1;
+
+    try {
+      const models = await this.getAvailableModels();
+      if (Array.isArray(models) && models.length > 0) {
+        const target = models.find((m) => m.id === modelKey);
+        if (target && target.creditCost != null && !Number.isNaN(parseInt(target.creditCost, 10))) {
+          perImageCost = Math.max(1, parseInt(target.creditCost, 10));
+        }
+      }
+    } catch (error) {
+      console.error('Failed to calculate batch cost:', error.message || error);
+    }
+
+    const totalCost = perImageCost * safeCount;
+    return { perImageCost, totalCost };
   }
 
   formatError(error) {

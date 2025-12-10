@@ -188,7 +188,9 @@ router.post('/checkin', authenticateToken, async (req, res, next) => {
 
         try {
             // 更新用户积分和签到信息
-            const newPoints = (user.drawing_points || 0) + 10;
+            // 优先使用环境变量，其次使用数据库配置，最后回退到默认值 10
+            const checkinPoints = parseInt(process.env.DEFAULT_USER_POINTS) || 10;
+            const newPoints = (user.drawing_points || 0) + checkinPoints;
             const newCheckinCount = (user.checkin_count || 0) + 1;
             
             // 【修复】使用今天的日期，格式为 YYYY-MM-DD
@@ -264,8 +266,8 @@ router.get('/api-keys', authenticateToken, async (req, res, next) => {
         connection = await pool.getConnection();
 
         const [keys] = await connection.execute(
-            `SELECT id, api_key, api_base_url, created_at, updated_at 
-             FROM user_api_config 
+            `SELECT id, api_key, api_base_url, is_active, created_at, updated_at
+             FROM user_api_config
              WHERE user_id = ?`,
             [userId]
         );
@@ -280,7 +282,7 @@ router.get('/api-keys', authenticateToken, async (req, res, next) => {
         }
 
         const key = keys[0];
-        
+
         // 对api_key进行脱敏处理，只显示开头和结尾
         const maskedKey = key.api_key.substring(0, 8) + '...' + key.api_key.substring(key.api_key.length - 4);
 
@@ -290,6 +292,7 @@ router.get('/api-keys', authenticateToken, async (req, res, next) => {
                 id: key.id,
                 api_key_preview: maskedKey,
                 api_base_url: key.api_base_url,
+                is_active: key.is_active === 1,
                 created_at: key.created_at,
                 updated_at: key.updated_at
             },
@@ -476,6 +479,65 @@ router.post('/api-keys/test', authenticateToken, async (req, res, next) => {
             success: false,
             error: '测试失败: ' + error.message
         });
+    }
+});
+
+/**
+ * 启用/禁用API Key
+ * PUT /api/user/api-keys/status
+ * body: { is_active: true/false }
+ */
+router.put('/api-keys/status', authenticateToken, async (req, res, next) => {
+    let connection;
+    try {
+        const userId = req.user.id;
+        const { is_active } = req.body;
+
+        if (typeof is_active !== 'boolean') {
+            return res.status(400).json({
+                success: false,
+                error: 'is_active 参数必须是布尔值'
+            });
+        }
+
+        console.log(`🔄 用户 ${userId} ${is_active ? '启用' : '禁用'} API Key`);
+
+        connection = await pool.getConnection();
+
+        // 检查API Key是否存在
+        const [existingKeys] = await connection.execute(
+            'SELECT id FROM user_api_config WHERE user_id = ?',
+            [userId]
+        );
+
+        if (existingKeys.length === 0) {
+            return res.status(404).json({
+                success: false,
+                error: '您还未配置API Key'
+            });
+        }
+
+        // 更新状态
+        await connection.execute(
+            'UPDATE user_api_config SET is_active = ?, updated_at = ? WHERE user_id = ?',
+            [is_active ? 1 : 0, new Date(), userId]
+        );
+
+        console.log(`✅ 用户 ${userId} 的API Key已${is_active ? '启用' : '禁用'}`);
+
+        res.json({
+            success: true,
+            message: `✅ API Key 已${is_active ? '启用' : '禁用'}`
+        });
+
+    } catch (error) {
+        console.error('更新API Key状态错误:', error);
+        res.status(500).json({
+            success: false,
+            error: '操作失败: ' + error.message
+        });
+    } finally {
+        if (connection) connection.release();
     }
 });
 

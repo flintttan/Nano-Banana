@@ -1,0 +1,98 @@
+{
+  "id": "IMPL-004",
+  "title": "Design HCI-based page structure and routing",
+  "status": "completed",
+  "context_package_path": ".workflow/active/WFS-refactor-frontend-shadcn-hci/.process/context-package.json",
+  "meta": {
+    "type": "feature",
+    "agent": "@code-developer",
+    "execution_group": "parallel-abc123",
+    "module": "frontend"
+  },
+  "context": {
+    "requirements": [
+      "Create 8 main pages: /login, /register, /dashboard, /gallery, /profile, /admin, /api-keys, /workspace",
+      "Implement protected route middleware for authenticated pages",
+      "Design navigation structure with sidebar/topbar",
+      "Set up 4 primary user flows: Registration→Dashboard→Generate, Image Generation→History→Edit, Admin Login→User Management, Profile→API Keys→Stats",
+      "Implement HCI principles: minimal cognitive load, clear navigation, immediate feedback, consistent design, mobile responsive"
+    ],
+    "focus_paths": [
+      "frontend/app/",
+      "frontend/components/layout/",
+      "frontend/lib/"
+    ],
+    "acceptance": [
+      "8 page components created: verify by find frontend/app/ -name 'page.tsx' | wc -l >= 8",
+      "Routing configuration exists: verify by test -f frontend/app/layout.tsx -o -f frontend/next.config.js",
+      "Navigation components implemented: verify by find frontend/components/ -name '*nav*' -o -name '*sidebar*' | wc -l >= 1",
+      "Protected route middleware created: verify by find frontend/lib/ -name '*auth*' -o -name '*middleware*' | wc -l >= 1"
+    ],
+    "depends_on": ["IMPL-003"],
+    "inherited": {
+      "from": "IMPL-003",
+      "context": ["Frontend package initialized from template", "Dependencies installed", "shadcn/ui configured"]
+    },
+    "shared_context": {
+      "tech_stack": ["React", "Next.js", "shadcn/ui", "Tailwind CSS"],
+      "design_principles": "HCI-based with minimal cognitive load",
+      "conventions": "Clean navigation, immediate feedback, consistent design, mobile responsive"
+    },
+    "artifacts": [
+      {
+        "type": "hci_design_requirements",
+        "source": "context_package",
+        "path": ".workflow/active/WFS-refactor-frontend-shadcn-hci/.process/context-package.json",
+        "priority": "highest",
+        "usage": "HCI design principles and user flow requirements",
+        "contains": "exploration_results.hci_design_requirements"
+      }
+    ]
+  },
+  "flow_control": {
+    "pre_analysis": [
+      {
+        "step": "analyze_hci_requirements",
+        "action": "Extract HCI design requirements from context",
+        "commands": ["Read(.workflow/active/WFS-refactor-frontend-shadcn-hci/.process/context-package.json | jq '.exploration_results.hci_design_requirements')"],
+        "output_to": "hci_requirements",
+        "on_error": "fail"
+      }
+    ],
+    "implementation_approach": [
+      {
+        "step": 1,
+        "title": "Create page structure and routing",
+        "description": "Implement all required pages with proper routing and navigation",
+        "modification_points": [
+          "Create 8 page components with proper file structure",
+          "Implement layout component with navigation",
+          "Set up protected routes middleware",
+          "Create navigation components (sidebar/topbar)",
+          "Implement responsive design with Tailwind CSS"
+        ],
+        "logic_flow": [
+          "Create app directory structure for Next.js or React Router setup",
+          "Implement all 8 required pages",
+          "Create layout with navigation components",
+          "Set up authentication guards for protected routes",
+          "Apply HCI design principles throughout"
+        ],
+        "depends_on": [],
+        "output": "page_structure_implemented"
+      }
+    ],
+    "target_files": [
+      "frontend/app/page.tsx",
+      "frontend/app/login/page.tsx",
+      "frontend/app/register/page.tsx",
+      "frontend/app/dashboard/page.tsx",
+      "frontend/app/gallery/page.tsx",
+      "frontend/app/profile/page.tsx",
+      "frontend/app/admin/page.tsx",
+      "frontend/app/api-keys/page.tsx",
+      "frontend/components/layout/",
+      "frontend/lib/auth.ts"
+    ]
+  }
+}

@@ -83,6 +83,31 @@ CREATE TABLE IF NOT EXISTS `batch_tasks` (
   FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='批量任务明细表';
 
--- 创建索引以优化查询性能
-CREATE INDEX idx_batch_queue_status ON batch_queues(status, created_at);
-CREATE INDEX idx_batch_task_queue_status ON batch_tasks(queue_id, status);
+-- 创建索引以优化查询性能（幂等操作）
+SET @db_name = DATABASE();
+
+-- 检查并创建 idx_batch_queue_status 索引
+SET @sql := IF (
+  NOT EXISTS (
+    SELECT 1 FROM information_schema.STATISTICS
+    WHERE TABLE_SCHEMA = @db_name AND TABLE_NAME = 'batch_queues' AND INDEX_NAME = 'idx_batch_queue_status'
+  ),
+  'CREATE INDEX idx_batch_queue_status ON batch_queues(status, created_at);',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- 检查并创建 idx_batch_task_queue_status 索引
+SET @sql := IF (
+  NOT EXISTS (
+    SELECT 1 FROM information_schema.STATISTICS
+    WHERE TABLE_SCHEMA = @db_name AND TABLE_NAME = 'batch_tasks' AND INDEX_NAME = 'idx_batch_task_queue_status'
+  ),
+  'CREATE INDEX idx_batch_task_queue_status ON batch_tasks(queue_id, status);',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;

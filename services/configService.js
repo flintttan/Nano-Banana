@@ -100,6 +100,41 @@ class ConfigService {
     return config;
   }
 
+  // Get enabled image models from dedicated model_management table
+  // Falls back to null if table is unavailable; callers should handle fallback models
+  async getEnabledModels() {
+    const cacheKey = 'enabled_models';
+
+    // Check cache first
+    if (this.cache[cacheKey] && this.cacheExpiry[cacheKey] > Date.now()) {
+      return this.cache[cacheKey];
+    }
+
+    try {
+      const [rows] = await pool.execute(
+        'SELECT model_key, name, description, icon, credit_cost FROM model_management WHERE is_enabled = 1 ORDER BY id ASC'
+      );
+
+      const models = rows.map(row => ({
+        id: row.model_key || row.name,
+        name: row.name || row.model_key,
+        description: row.description || '',
+        icon: row.icon || '✨',
+        creditCost: row.credit_cost !== null && row.credit_cost !== undefined
+          ? parseInt(row.credit_cost, 10)
+          : null
+      }));
+
+      this.cache[cacheKey] = models;
+      this.cacheExpiry[cacheKey] = Date.now() + this.cacheTTL;
+
+      return models;
+    } catch (error) {
+      console.error('Failed to load enabled models from model_management:', error.message);
+      return null;
+    }
+  }
+
   // Get registration configuration
   async getRegistrationConfig() {
     const domainWhitelistStr = await this.get('registration_domain_whitelist') || '[]';
@@ -116,9 +151,13 @@ class ConfigService {
       domainWhitelist = [];
     }
 
+    // 优先使用环境变量，其次使用数据库配置，最后回退到默认值 10
+    const defaultPoints = parseInt(process.env.DEFAULT_USER_POINTS) || 10;
+    const initialCredits = parseInt(await this.get('registration_initial_credits') || defaultPoints);
+
     const config = {
       domainWhitelist: domainWhitelist,
-      initialCredits: parseInt(await this.get('registration_initial_credits') || '10')
+      initialCredits: initialCredits
     };
 
     return config;

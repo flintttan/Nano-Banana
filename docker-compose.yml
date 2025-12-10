@@ -24,9 +24,10 @@ services:
       start_period: 30s
 
   redis:
-    image: redis:6-alpine
+    image: redis:7-alpine
     container_name: nano-banana-redis
     restart: unless-stopped
+    platform: linux/arm64
     ports:
       - "${REDIS_PORT}:6379"
     volumes:

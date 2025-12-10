@@ -237,6 +237,39 @@ router.post('/login', async (req, res, next) => {
     }
 });
 
+// === 刷新访问令牌 API ===
+// 使用现有的访问令牌换取一个新的 7 天有效期的令牌
+// 前端需要在 Authorization 头中携带 Bearer <token>
+router.post('/refresh', authenticateToken, (req, res) => {
+    try {
+        const userProfile = {
+            id: req.user.id,
+            username: req.user.username,
+            email: req.user.email,
+            role: req.user.role || 'user',
+            drawing_points: req.user.drawing_points || 0,
+            creation_count: req.user.creation_count || 0
+        };
+
+        const token = jwt.sign(userProfile, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+        res.json({
+            success: true,
+            message: '访问令牌已刷新',
+            data: {
+                user: userProfile,
+                token: token
+            }
+        });
+    } catch (error) {
+        console.error('刷新访问令牌失败:', error);
+        res.status(500).json({
+            success: false,
+            error: '刷新访问令牌失败'
+        });
+    }
+});
+
 // === 获取当前用户信息 API (保持不变) ===
 router.get('/me', authenticateToken, async (req, res, next) => {
     res.json({

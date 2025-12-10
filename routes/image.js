@@ -13,6 +13,7 @@ const sharp = require('sharp');
 
 const { pool } = require('../config/database'); 
 const aiService = require('../services/aiService');
+const queueService = require('../services/queueService');
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -73,20 +74,27 @@ async function saveImageFromSource(temporaryImageUrl, filePath) {
 }
 
 async function getApiKeyToUse(connection, userId, currentPoints, requiredPoints) {
+    // 获取积分扣除模式配置，默认为 system_key_only
+    const pointsMode = process.env.POINTS_DEDUCTION_MODE || 'system_key_only';
+
     try {
         const [userKeys] = await connection.execute(
-            `SELECT api_key, api_base_url FROM user_api_config WHERE user_id = ? LIMIT 1`,
+            `SELECT api_key, api_base_url, is_active FROM user_api_config WHERE user_id = ? LIMIT 1`,
             [userId]
         );
-        if (userKeys.length > 0) {
+        if (userKeys.length > 0 && userKeys[0].is_active === 1) {
+            // 用户有API密钥时
+            const shouldDeduct = (pointsMode === 'always');
             return {
                 key: userKeys[0].api_key,
                 baseUrl: userKeys[0].api_base_url || process.env.AI_API_BASE_URL,
                 isUserKey: true,
-                shouldDeductPoints: false
+                shouldDeductPoints: shouldDeduct
             };
         }
     } catch (error) { console.error('获取用户API Key失败:', error); }
+
+    // 用户没有API密钥或密钥无效时，使用系统密钥并扣除积分
     if (currentPoints >= requiredPoints) {
         return {
             key: process.env.AI_API_KEY,
@@ -271,6 +279,108 @@ router.post('/edit', authenticateToken, upload.array('image', 3), async (req, re
         });
 
     } catch (error) { console.error('图生图错误:', error); next(error); } finally { if (connection) connection.release(); }
+});
+
+// 批量编辑：基于已生成作品进行批量图生图
+router.post('/batch-edit', authenticateToken, async (req, res, next) => {
+    let connection;
+    try {
+        const userId = req.user.id;
+        const { imageIds, model, prompt } = req.body || {};
+
+        if (!Array.isArray(imageIds) || imageIds.length === 0) {
+            return res.status(400).json({ success: false, error: '请至少选择一张要编辑的作品' });
+        }
+
+        if (!model || typeof model !== 'string') {
+            return res.status(400).json({ success: false, error: '请选择要使用的模型' });
+        }
+
+        const normalizedIds = Array.from(new Set(imageIds
+            .map((id) => parseInt(id, 10))
+            .filter((id) => Number.isInteger(id) && id > 0)));
+
+        if (normalizedIds.length === 0) {
+            return res.status(400).json({ success: false, error: '没有有效的作品 ID' });
+        }
+
+        connection = await pool.getConnection();
+
+        // 读取用户积分
+        const [users] = await connection.execute('SELECT drawing_points FROM users WHERE id = ?', [userId]);
+        if (users.length === 0) {
+            return res.status(404).json({ success: false, error: '用户不存在' });
+        }
+
+        const currentPoints = users[0].drawing_points || 0;
+
+        // 校验作品归属
+        const [creations] = await connection.execute(
+            `SELECT id FROM creations WHERE user_id = ? AND id IN (?)`,
+            [userId, normalizedIds]
+        );
+
+        if (!Array.isArray(creations) || creations.length === 0) {
+            return res.status(404).json({ success: false, error: '未找到可编辑的作品' });
+        }
+
+        if (creations.length !== normalizedIds.length) {
+            return res.status(400).json({ success: false, error: '所选作品中包含不存在或不属于你的图片' });
+        }
+
+        const imageCount = creations.length;
+
+        // 计算积分消耗（基于模型配置）
+        const { perImageCost, totalCost } = await aiService.calculateBatchCost(imageCount, model);
+
+        if (totalCost <= 0) {
+            return res.status(400).json({ success: false, error: '无效的批量编辑任务（图片数量或模型配置异常）' });
+        }
+
+        if (currentPoints < totalCost) {
+            return res.status(400).json({
+                success: false,
+                error: `积分不足，需要 ${totalCost} 积分，当前 ${currentPoints} 积分`
+            });
+        }
+
+        // 创建批量编辑队列
+        const queueResult = await queueService.createBatchEditQueue(
+            userId,
+            normalizedIds,
+            model,
+            typeof prompt === 'string' ? prompt : ''
+        );
+
+        if (!queueResult || !queueResult.success) {
+            const errMsg = (queueResult && queueResult.error) || '创建批量编辑队列失败';
+            return res.status(500).json({ success: false, error: errMsg });
+        }
+
+        const queueId = queueResult.queueId;
+
+        // 扣除积分（与队列创建解耦，以减少失败时的回滚复杂度）
+        await connection.execute(
+            'UPDATE users SET drawing_points = drawing_points - ? WHERE id = ?',
+            [totalCost, userId]
+        );
+
+        return res.json({
+            success: true,
+            data: {
+                queueId,
+                imageCount,
+                model,
+                perImageCost,
+                totalCost
+            }
+        });
+    } catch (error) {
+        console.error('批量编辑任务创建失败:', error);
+        next(error);
+    } finally {
+        if (connection) connection.release();
+    }
 });
 
 router.get('/history', authenticateToken, async (req, res, next) => {

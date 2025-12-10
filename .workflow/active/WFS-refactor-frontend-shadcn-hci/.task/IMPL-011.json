@@ -1,0 +1,104 @@
+{
+  "id": "IMPL-011",
+  "title": "Test and validate all API integrations",
+  "status": "pending",
+  "context_package_path": ".workflow/active/WFS-refactor-frontend-shadcn-hci/.process/context-package.json",
+  "meta": {
+    "type": "test-gen",
+    "agent": "@code-developer",
+    "execution_group": "parallel-abc123",
+    "module": "frontend"
+  },
+  "context": {
+    "requirements": [
+      "Test 16 API endpoints across 4 categories: image_generation (5), user_management (5), admin_panel (6), authentication (3)",
+      "Validate JWT authentication flow: login, token refresh, logout",
+      "Test all user workflows: Registration→Dashboard→Generate→Gallery, Profile→API Keys, Admin→User Management",
+      "Verify responsive design on mobile, tablet, and desktop",
+      "Test error handling: network errors, API failures, validation errors",
+      "Validate file upload functionality for image editing",
+      "Test admin panel access control and role-based permissions",
+      "Performance testing: page load times, image loading, API response times"
+    ],
+    "focus_paths": [
+      "frontend/",
+      "routes/",
+      "server.js"
+    ],
+    "acceptance": [
+      "All 16 API endpoints tested: verify by test report with pass/fail status",
+      "Authentication flow validated: verify by manual testing or automated tests",
+      "User workflows tested: verify by checklist of all 4 primary workflows",
+      "Responsive design verified: verify by testing on 3 screen sizes",
+      "Error handling validated: verify by testing error scenarios",
+      "File upload tested: verify by successful image upload and edit",
+      "Admin permissions tested: verify by role-based access validation"
+    ],
+    "depends_on": ["IMPL-010"],
+    "inherited": {
+      "from": "IMPL-010",
+      "context": ["Server configuration updated", "Frontend served correctly", "All features implemented"]
+    },
+    "shared_context": {
+      "tech_stack": ["React", "Next.js", "Express.js", "Jest/Vitest"],
+      "testing_strategy": "End-to-end API integration testing",
+      "conventions": "Error handling, responsive design, performance optimization"
+    },
+    "artifacts": [
+      {
+        "type": "api_capabilities",
+        "source": "context_package",
+        "path": ".workflow/active/WFS-refactor-frontend-shadcn-hci/.process/context-package.json",
+        "priority": "highest",
+        "usage": "All API endpoints for comprehensive testing",
+        "contains": "exploration_results.api_capabilities"
+      }
+    ]
+  },
+  "flow_control": {
+    "pre_analysis": [
+      {
+        "step": "create_test_plan",
+        "action": "Generate comprehensive test plan",
+        "commands": ["bash(echo 'Creating API integration test plan')"],
+        "output_to": "test_plan",
+        "on_error": "skip_optional"
+      }
+    ],
+    "implementation_approach": [
+      {
+        "step": 1,
+        "title": "Comprehensive API integration testing",
+        "description": "Test all API integrations and user workflows",
+        "modification_points": [
+          "Create API integration test suite",
+          "Test authentication flow (login, register, refresh)",
+          "Test image generation and management APIs",
+          "Test user management and profile APIs",
+          "Test admin panel functionality",
+          "Validate responsive design across devices",
+          "Test error handling and edge cases",
+          "Performance testing and optimization"
+        ],
+        "logic_flow": [
+          "Create test documentation",
+          "Test each API endpoint systematically",
+          "Validate complete user workflows",
+          "Test error scenarios and recovery",
+          "Verify responsive design",
+          "Performance testing and profiling",
+          "Document test results and fix issues",
+          "Create test report with findings"
+        ],
+        "depends_on": [],
+        "output": "api_integration_tested"
+      }
+    ],
+    "target_files": [
+      "tests/integration/",
+      "frontend/",
+      "routes/",
+      "server.js"
+    ]
+  }
+}

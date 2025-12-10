@@ -1,0 +1,383 @@
+{
+  "metadata": {
+    "session_id": "WFS-refactor-frontend-shadcn-hci",
+    "task_description": "GOAL: Refactor frontend - replace current port 3010 frontend with new React/shadcn-based frontend. SCOPE: Delete existing public/ frontend files, create new frontend/ package using boilerplate-shadcn-pro-main template, design HCI-based page structure matching current API capabilities. CONTEXT: Template at fe_template/boilerplate-shadcn-pro-main, existing Express APIs in routes/ directory (admin.js, user.js, image.js)",
+    "keywords": [
+      "frontend",
+      "refactor",
+      "react",
+      "shadcn",
+      "hci",
+      "ui",
+      "replacement",
+      "public",
+      "frontend"
+    ],
+    "complexity": "high",
+    "tech_stack": [
+      "JavaScript",
+      "Express.js",
+      "React",
+      "shadcn/ui",
+      "Tailwind CSS",
+      "Node.js"
+    ],
+    "created_at": "2025-12-10T14:07:00.000Z"
+  },
+  "project_context": {
+    "description": "AI绘图创作平台 - 轻量级、功能强大的AI绘图Web应用，支持文生图、图生图及图片二次编辑功能，配备完整的用户系统和超级管理员后台。基于Node.js/Express构建的现代化SaaS应用。",
+    "technology_stack": {
+      "languages": [
+        {
+          "name": "JavaScript",
+          "file_count": 19,
+          "primary": true
+        },
+        {
+          "name": "HTML",
+          "file_count": 5,
+          "primary": false
+        },
+        {
+          "name": "CSS",
+          "file_count": 2,
+          "primary": false
+        },
+        {
+          "name": "JSON",
+          "file_count": 2,
+          "primary": false
+        }
+      ],
+      "frameworks": [
+        "Express.js",
+        "Tailwind CSS"
+      ],
+      "build_tools": [
+        "npm"
+      ],
+      "test_frameworks": []
+    },
+    "architecture": {
+      "style": "layered",
+      "layers": [
+        "presentation",
+        "business-logic",
+        "data-access",
+        "configuration"
+      ],
+      "patterns": [
+        "service-layer",
+        "repository",
+        "middleware"
+      ]
+    },
+    "key_components": [
+      {
+        "name": "server.js",
+        "path": "server.js",
+        "description": "应用主入口文件 - Express服务器配置、路由挂载、中间件设置、启动逻辑",
+        "importance": "high"
+      },
+      {
+        "name": "routes",
+        "path": "routes/",
+        "description": "API路由层 - 包含admin、auth、image、user、batch等路由模块",
+        "importance": "high"
+      },
+      {
+        "name": "services",
+        "path": "services/",
+        "description": "业务逻辑服务层 - aiService(AI接口)、queueService(队列)、configService(配置)、mailService(邮件)",
+        "importance": "high"
+      },
+      {
+        "name": "models",
+        "path": "models/",
+        "description": "数据模型层 - User、Image、Announcement数据模型定义",
+        "importance": "high"
+      },
+      {
+        "name": "config",
+        "path": "config/",
+        "description": "应用配置模块 - 数据库连接配置(config/database.js)",
+        "importance": "high"
+      },
+      {
+        "name": "public",
+        "path": "public/",
+        "description": "静态前端资源 - HTML、CSS、JS静态文件，Modern Minimalist SaaS设计系统",
+        "importance": "medium"
+      },
+      {
+        "name": "utils",
+        "path": "utils/",
+        "description": "工具函数库 - adminInit.js等辅助工具函数",
+        "importance": "medium"
+      },
+      {
+        "name": "docs",
+        "path": "docs/",
+        "description": "项目文档 - 设计系统指南、开发者指南、部署文档等",
+        "importance": "low"
+      }
+    ]
+  },
+  "assets": {
+    "documentation": [
+      {
+        "path": "docs/FRONTEND_REFACTORING_SUMMARY.md",
+        "relevance": 0.9,
+        "rationale": "Contains frontend refactoring guidelines and patterns"
+      },
+      {
+        "path": "docs/DESIGN_SYSTEM_GUIDE.md",
+        "relevance": 0.8,
+        "rationale": "Design system specifications for new frontend"
+      },
+      {
+        "path": "README.md",
+        "relevance": 0.7,
+        "rationale": "Project overview and setup instructions"
+      }
+    ],
+    "source_code": [
+      {
+        "path": "routes/image.js",
+        "relevance": 0.95,
+        "rationale": "Image generation API - core functionality for new frontend to integrate with"
+      },
+      {
+        "path": "routes/user.js",
+        "relevance": 0.9,
+        "rationale": "User management API - authentication, profile, usage statistics"
+      },
+      {
+        "path": "routes/admin.js",
+        "relevance": 0.85,
+        "rationale": "Admin panel API - user management, announcements, presets"
+      },
+      {
+        "path": "routes/auth.js",
+        "relevance": 0.85,
+        "rationale": "Authentication API - login, register, token management"
+      },
+      {
+        "path": "server.js",
+        "relevance": 0.8,
+        "rationale": "Main server configuration - static file serving, API routing"
+      },
+      {
+        "path": "public/index.html",
+        "relevance": 0.7,
+        "rationale": "Current homepage - to be deleted, used as reference for functionality"
+      },
+      {
+        "path": "public/login.html",
+        "relevance": 0.7,
+        "rationale": "Current login page - to be deleted, used as reference for auth flow"
+      }
+    ],
+    "config": [
+      {
+        "path": "fe_template/boilerplate-shadcn-pro-main/package.json",
+        "relevance": 0.9,
+        "rationale": "Template dependencies and scripts for new frontend"
+      },
+      {
+        "path": "fe_template/boilerplate-shadcn-pro-main/components.json",
+        "relevance": 0.9,
+        "rationale": "shadcn/ui configuration for new frontend"
+      },
+      {
+        "path": "package.json",
+        "relevance": 0.6,
+        "rationale": "Backend dependencies - for reference on API structure"
+      }
+    ],
+    "tests": []
+  },
+  "dependencies": {
+    "internal": [
+      {
+        "from": "public/",
+        "to": "routes/",
+        "type": "api-calls",
+        "description": "Current frontend makes API calls to Express routes"
+      },
+      {
+        "from": "server.js",
+        "to": "routes/",
+        "type": "mounting",
+        "description": "Express server mounts route modules"
+      },
+      {
+        "from": "routes/",
+        "to": "services/",
+        "type": "service-calls",
+        "description": "Routes use services for business logic"
+      }
+    ],
+    "external": [
+      {
+        "name": "express",
+        "version": "unknown",
+        "purpose": "Backend web framework",
+        "usage": "Server and routing"
+      },
+      {
+        "name": "jsonwebtoken",
+        "version": "unknown",
+        "purpose": "JWT authentication",
+        "usage": "User authentication and authorization"
+      },
+      {
+        "name": "bcryptjs",
+        "version": "unknown",
+        "purpose": "Password hashing",
+        "usage": "Secure password storage"
+      },
+      {
+        "name": "react",
+        "version": "unknown (from template)",
+        "purpose": "Frontend framework",
+        "usage": "New frontend UI library"
+      },
+      {
+        "name": "shadcn/ui",
+        "version": "unknown (from template)",
+        "purpose": "UI component library",
+        "usage": "Pre-built UI components for React"
+      },
+      {
+        "name": "tailwindcss",
+        "version": "unknown",
+        "purpose": "CSS framework",
+        "usage": "Styling for React components"
+      }
+    ]
+  },
+  "brainstorm_artifacts": {
+    "guidance_specification": null,
+    "role_analyses": [],
+    "synthesis_output": null
+  },
+  "conflict_detection": {
+    "risk_level": "medium",
+    "risk_factors": [
+      "Complete frontend replacement requires careful API integration",
+      "Authentication flow needs to be maintained during transition",
+      "Static file serving configuration must be updated in server.js",
+      "JWT token handling must be consistent between old and new frontend",
+      "File upload functionality (image editing) needs proper integration"
+    ],
+    "affected_modules": [
+      "public/",
+      "server.js",
+      "routes/",
+      "fe_template/boilerplate-shadcn-pro-main/"
+    ],
+    "mitigation_strategy": "1. Analyze all existing API endpoints before implementation. 2. Create API integration layer in new frontend. 3. Test authentication flow thoroughly. 4. Update server.js static file configuration. 5. Maintain backward compatibility during development.",
+    "historical_conflicts": []
+  },
+  "exploration_results": {
+    "manifest_path": ".workflow/active/WFS-refactor-frontend-shadcn-hci/.process/explorations-manifest.json",
+    "exploration_count": 0,
+    "angles": [],
+    "explorations": [],
+    "aggregated_insights": {
+      "api_capabilities": {
+        "image_generation": [
+          "POST /api/image/generate - Text to image generation",
+          "POST /api/image/edit - Image editing with upload",
+          "POST /api/image/batch-edit - Batch image editing",
+          "GET /api/image/history - User's image generation history",
+          "DELETE /api/image/delete/:id - Delete generated image"
+        ],
+        "user_management": [
+          "GET /api/user/info - User profile information",
+          "POST /api/user/checkin - Daily check-in for points",
+          "GET /api/user/api-keys - Manage API keys",
+          "POST /api/user/api-keys - Create API keys",
+          "PUT /api/user/api-keys/status - Toggle API key status"
+        ],
+        "admin_panel": [
+          "GET /api/admin/users - List all users",
+          "PUT /api/admin/users/:id/status - Activate/deactivate users",
+          "GET /api/admin/users/stats - User statistics",
+          "POST /api/admin/users/points - Adjust user points",
+          "GET /api/admin/announcements - Manage announcements",
+          "GET /api/admin/inspirations - Manage inspiration prompts"
+        ],
+        "authentication": [
+          "POST /api/auth/register - User registration",
+          "POST /api/auth/login - User login",
+          "POST /api/auth/refresh - Refresh JWT token"
+        ]
+      },
+      "current_frontend_structure": {
+        "files_to_delete": [
+          "public/index.html - Main workspace page",
+          "public/login.html - Login page",
+          "public/styles/components/queue.css - Queue component styles",
+          "public/styles/components/canvas.css - Canvas component styles",
+          "public/styles/components/sidebar.css - Sidebar styles",
+          "public/styles/components/cards.css - Card component styles",
+          "public/styles/workspace.css - Workspace styles",
+          "public/scripts/workspace.js - Workspace functionality",
+          "public/scripts/api.js - API integration"
+        ],
+        "functionality_to_preserve": [
+          "User authentication flow (login/register)",
+          "Image generation workspace",
+          "Image editing capabilities",
+          "User profile management",
+          "Daily check-in system",
+          "API key management",
+          "Admin panel access"
+        ]
+      },
+      "template_analysis": {
+        "location": "fe_template/boilerplate-shadcn-pro-main/",
+        "structure": {
+          "app/": "Next.js app directory structure",
+          "components/": "Reusable UI components",
+          "lib/": "Utility functions and configurations",
+          "hooks/": "Custom React hooks",
+          "contexts/": "React context providers"
+        },
+        "technologies": [
+          "React",
+          "Next.js (likely)",
+          "shadcn/ui components",
+          "Tailwind CSS",
+          "TypeScript support"
+        ]
+      },
+      "hci_design_requirements": {
+        "primary_user_flows": [
+          "1. User Registration/Login → Dashboard → Generate Images",
+          "2. Image Generation → View History → Edit/Regenerate",
+          "3. Admin Login → User Management → System Configuration",
+          "4. Profile Management → API Keys → Usage Statistics"
+        ],
+        "key_pages_needed": [
+          "/login - Authentication page",
+          "/register - User registration",
+          "/dashboard - Main workspace for image generation",
+          "/gallery - Image history and management",
+          "/profile - User profile and settings",
+          "/admin - Admin panel (protected route)",
+          "/api-keys - API key management"
+        ],
+        "hci_principles": [
+          "Minimize cognitive load - Simple, clean interface",
+          "Clear navigation - Intuitive menu structure",
+          "Immediate feedback - Loading states, success/error messages",
+          "Consistent design - Use shadcn/ui component library",
+          "Mobile responsive - Tailwind CSS responsive design"
+        ]
+      }
+    }
+  }
+}

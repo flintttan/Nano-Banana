@@ -1,0 +1,107 @@
+{
+  "id": "IMPL-008",
+  "title": "Implement user profile and API key management",
+  "status": "pending",
+  "context_package_path": ".workflow/active/WFS-refactor-frontend-shadcn-hci/.process/context-package.json",
+  "meta": {
+    "type": "feature",
+    "agent": "@code-developer",
+    "execution_group": "parallel-abc123",
+    "module": "frontend"
+  },
+  "context": {
+    "requirements": [
+      "Create user profile page with editable user information",
+      "Implement API key management interface with GET /api/user/api-keys, POST /api/user/api-keys, PUT /api/user/api-keys/status",
+      "Add daily check-in functionality with POST /api/user/checkin",
+      "Create usage statistics display with charts/graphs",
+      "Implement password change functionality",
+      "Add account deletion/deactivation options",
+      "Create settings page for user preferences",
+      "Display user points/credits balance and transaction history"
+    ],
+    "focus_paths": [
+      "frontend/app/profile/",
+      "frontend/app/api-keys/",
+      "frontend/components/profile/",
+      "routes/user.js"
+    ],
+    "acceptance": [
+      "Profile page created: verify by test -f frontend/app/profile/page.tsx",
+      "API keys page created: verify by test -f frontend/app/api-keys/page.tsx",
+      "User info API integration: verify by grep -r 'GET /api/user/info' frontend/lib/ | wc -l >= 1",
+      "API key management: verify by grep -r '/api/user/api-keys' frontend/lib/ | wc -l >= 3",
+      "Check-in functionality: verify by grep -r 'POST /api/user/checkin' frontend/lib/ | wc -l >= 1"
+    ],
+    "depends_on": ["IMPL-007"],
+    "inherited": {
+      "from": "IMPL-007",
+      "context": ["Gallery implemented", "Image history working", "UI patterns established"]
+    },
+    "shared_context": {
+      "tech_stack": ["React", "Next.js", "shadcn/ui", "Tailwind CSS"],
+      "user_features": "Profile management, API keys, statistics, check-in",
+      "conventions": "Form validation, data visualization, secure credential handling"
+    },
+    "artifacts": [
+      {
+        "type": "api_capabilities",
+        "source": "context_package",
+        "path": ".workflow/active/WFS-refactor-frontend-shadcn-hci/.process/context-package.json",
+        "priority": "high",
+        "usage": "User management API endpoints specification",
+        "contains": "exploration_results.api_capabilities.user_management"
+      }
+    ]
+  },
+  "flow_control": {
+    "pre_analysis": [
+      {
+        "step": "analyze_user_apis",
+        "action": "Review user management API structure",
+        "commands": ["Read(routes/user.js | head -60)"],
+        "output_to": "user_api_structure",
+        "on_error": "fail"
+      }
+    ],
+    "implementation_approach": [
+      {
+        "step": 1,
+        "title": "Implement profile and API key management",
+        "description": "Create user profile and API key management interfaces",
+        "modification_points": [
+          "Create profile page with user information display",
+          "Implement editable profile form",
+          "Create API keys management page",
+          "Add API key creation and status toggle",
+          "Implement daily check-in with reward display",
+          "Create usage statistics dashboard",
+          "Add password change functionality",
+          "Implement settings and preferences"
+        ],
+        "logic_flow": [
+          "Create profile page layout",
+          "Integrate GET /api/user/info endpoint",
+          "Implement profile editing form",
+          "Create API keys management interface",
+          "Integrate API key CRUD operations",
+          "Add daily check-in functionality",
+          "Implement usage statistics visualization",
+          "Test all user management features"
+        ],
+        "depends_on": [],
+        "output": "profile_and_api_keys_implemented"
+      }
+    ],
+    "target_files": [
+      "frontend/app/profile/page.tsx",
+      "frontend/app/api-keys/page.tsx",
+      "frontend/components/profile/ProfileForm.tsx",
+      "frontend/components/profile/ApiKeyManager.tsx",
+      "frontend/components/profile/UsageStats.tsx",
+      "frontend/components/profile/CheckInButton.tsx",
+      "frontend/lib/api.ts",
+      "routes/user.js"
+    ]
+  }
+}

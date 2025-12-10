@@ -10,9 +10,11 @@ const path = require('path');
 class QueueService {
   constructor() {
     this.isProcessing = false;
-    this.currentConcurrency = 3; // 默认并发数
+    // 从环境变量读取并发数，默认为3
+    this.currentConcurrency = parseInt(process.env.BATCH_CONCURRENCY) || 3;
     this.activeWorkers = 0;
-    this.maxRetries = 2; // 最大重试次数
+    // 从环境变量读取最大重试次数，默认为2
+    this.maxRetries = parseInt(process.env.BATCH_MAX_RETRIES) || 2;
   }
 
   /**
@@ -66,11 +68,33 @@ class QueueService {
     try {
       await connection.beginTransaction();
 
-      // 1. 创建队列记录
+      // 预先解析文件名与文件夹路径
+      const normalizedFiles = imageFiles.map((file) => {
+        const originalName = file.originalname || '';
+        const normalizedName = originalName.replace(/\\\\/g, '/');
+        const lastSlash = normalizedName.lastIndexOf('/');
+        const folderPath = lastSlash > -1 ? normalizedName.slice(0, lastSlash) : '';
+        const baseName = lastSlash > -1 ? normalizedName.slice(lastSlash + 1) : normalizedName;
+        return { file, folderPath, baseName };
+      });
+
+      const uniqueFolderPaths = Array.from(
+        new Set(normalizedFiles.map(item => item.folderPath).filter(Boolean))
+      );
+
+      let queueFolderPath = null;
+      if (uniqueFolderPaths.length === 1) {
+        queueFolderPath = uniqueFolderPaths[0];
+      } else if (uniqueFolderPaths.length > 1) {
+        const preview = uniqueFolderPaths.slice(0, 3).join(', ');
+        queueFolderPath = preview + (uniqueFolderPaths.length > 3 ? ' 等' : '');
+      }
+
+      // 1. 创建队列记录（queue_type = 'batch' 表示普通批量图生图）
       const [queueResult] = await connection.execute(
-        `INSERT INTO batch_queues (user_id, batch_name, prompt, model, total_images, status)
-         VALUES (?, ?, ?, ?, ?, 'pending')`,
-        [userId, batchName, prompt, model, imageFiles.length]
+        `INSERT INTO batch_queues (user_id, batch_name, prompt, model, total_images, status, folder_path, queue_type)
+         VALUES (?, ?, ?, ?, ?, 'pending', ?, 'batch')`,
+        [userId, batchName, prompt, model, normalizedFiles.length, queueFolderPath]
       );
 
       const queueId = queueResult.insertId;
@@ -81,8 +105,9 @@ class QueueService {
         fs.mkdirSync(uploadsDir, { recursive: true });
       }
 
-      for (const file of imageFiles) {
-        const fileName = `${Date.now()}-${userId}-${file.originalname}`;
+      for (const item of normalizedFiles) {
+        const { file, folderPath, baseName } = item;
+        const fileName = `${Date.now()}-${userId}-${baseName}`;
         const filePath = path.join(uploadsDir, fileName);
         const publicUrl = `/uploads/batch/${fileName}`;
 
@@ -91,9 +116,9 @@ class QueueService {
 
         // 创建任务记录
         await connection.execute(
-          `INSERT INTO batch_tasks (queue_id, user_id, original_image_url, original_filename, prompt, model, status)
-           VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
-          [queueId, userId, publicUrl, file.originalname, prompt, model]
+          `INSERT INTO batch_tasks (queue_id, user_id, original_image_url, original_filename, folder_path, prompt, model, status)
+           VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')`,
+          [queueId, userId, publicUrl, baseName, folderPath || null, prompt, model]
         );
       }
 
@@ -245,7 +270,26 @@ class QueueService {
         [task.queue_id]
       );
 
-      // 8. 检查队列是否全部完成
+      // 8. 将结果写入用户作品表，便于在「我的作品」中统一展示
+      try {
+        await connection.execute(
+          `INSERT INTO creations (user_id, prompt, image_url, model, size, created_at, folder_path)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [
+            task.user_id,
+            task.prompt,
+            publicUrl,
+            task.model || null,
+            null,
+            new Date(),
+            task.folder_path || null
+          ]
+        );
+      } catch (insertErr) {
+        console.error(`⚠️ 写入 creations 表失败（task ${task.id}）:`, insertErr.message);
+      }
+
+      // 9. 检查队列是否全部完成
       await this.checkQueueCompletion(task.queue_id, connection);
 
       console.log(`✅ 任务 ${task.id} 处理完成`);
@@ -282,6 +326,111 @@ class QueueService {
     } finally {
       connection.release();
       this.activeWorkers--;
+    }
+  }
+
+  /**
+   * 创建批量编辑队列：基于用户已有作品进行图生图批量处理
+   */
+  async createBatchEditQueue(userId, imageIds, model, overridePrompt = '') {
+    const connection = await pool.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      // 规范化 ID 列表
+      const normalizedIds = Array.from(new Set((imageIds || [])
+        .map((id) => parseInt(id, 10))
+        .filter((id) => Number.isInteger(id) && id > 0)));
+
+      if (normalizedIds.length === 0) {
+        throw new Error('没有有效的作品 ID');
+      }
+
+      // 查询用户作品信息，确保只处理当前用户的作品
+      const [creations] = await connection.execute(
+        `SELECT id, image_url, prompt, model, folder_path
+         FROM creations
+         WHERE user_id = ? AND id IN (?)`,
+        [userId, normalizedIds]
+      );
+
+      if (!Array.isArray(creations) || creations.length === 0) {
+        throw new Error('未找到可批量编辑的作品');
+      }
+
+      // 统一队列级 folder_path 预览信息
+      const uniqueFolderPaths = Array.from(new Set(
+        creations
+          .map((c) => (c.folder_path || '').trim())
+          .filter((p) => p.length > 0)
+      ));
+
+      let queueFolderPath = null;
+      if (uniqueFolderPaths.length === 1) {
+        queueFolderPath = uniqueFolderPaths[0];
+      } else if (uniqueFolderPaths.length > 1) {
+        const preview = uniqueFolderPaths.slice(0, 3).join(', ');
+        queueFolderPath = preview + (uniqueFolderPaths.length > 3 ? ' 等' : '');
+      }
+
+      const finalPromptForQueue = (overridePrompt && overridePrompt.trim())
+        ? overridePrompt.trim()
+        : '批量编辑 - 使用原图提示词';
+
+      // 创建批量编辑队列记录
+      const [queueResult] = await connection.execute(
+        `INSERT INTO batch_queues (user_id, batch_name, prompt, model, total_images, completed_images, failed_images, status, folder_path, queue_type)
+         VALUES (?, ?, ?, ?, ?, 0, 0, 'pending', ?, 'edit')`,
+        [
+          userId,
+          `批量编辑_${Date.now()}`,
+          finalPromptForQueue,
+          model || null,
+          creations.length,
+          queueFolderPath
+        ]
+      );
+
+      const queueId = queueResult.insertId;
+
+      // 为每个作品创建任务记录
+      for (const item of creations) {
+        const originalUrl = item.image_url;
+        const originalFilename = originalUrl
+          ? String(originalUrl).split('/').filter(Boolean).pop()
+          : `creation-${item.id}.png`;
+
+        const effectivePrompt = (overridePrompt && overridePrompt.trim())
+          ? overridePrompt.trim()
+          : (item.prompt || '');
+
+        await connection.execute(
+          `INSERT INTO batch_tasks (queue_id, user_id, original_image_url, original_filename, folder_path, prompt, model, status)
+           VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')`,
+          [
+            queueId,
+            userId,
+            originalUrl,
+            originalFilename,
+            item.folder_path || null,
+            effectivePrompt,
+            model || item.model || null
+          ]
+        );
+      }
+
+      await connection.commit();
+
+      // 启动队列处理
+      this.startProcessing();
+
+      return { success: true, queueId };
+    } catch (error) {
+      await connection.rollback();
+      console.error('❌ 创建批量编辑队列失败:', error);
+      return { success: false, error: error.message };
+    } finally {
+      connection.release();
     }
   }
 

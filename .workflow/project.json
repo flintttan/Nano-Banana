@@ -1,0 +1,121 @@
+{
+  "project_name": "Nano-Banana",
+  "initialized_at": "2025-12-10T06:06:04.000Z",
+  "overview": {
+    "description": "AI绘图创作平台 - 轻量级、功能强大的AI绘图Web应用，支持文生图、图生图及图片二次编辑功能，配备完整的用户系统和超级管理员后台。基于Node.js/Express构建的现代化SaaS应用。",
+    "technology_stack": {
+      "languages": [
+        {
+          "name": "JavaScript",
+          "file_count": 19,
+          "primary": true
+        },
+        {
+          "name": "HTML",
+          "file_count": 5,
+          "primary": false
+        },
+        {
+          "name": "CSS",
+          "file_count": 2,
+          "primary": false
+        },
+        {
+          "name": "JSON",
+          "file_count": 2,
+          "primary": false
+        }
+      ],
+      "frameworks": [
+        "Express.js",
+        "Tailwind CSS"
+      ],
+      "build_tools": [
+        "npm"
+      ],
+      "test_frameworks": []
+    },
+    "architecture": {
+      "style": "layered",
+      "layers": [
+        "presentation",
+        "business-logic",
+        "data-access",
+        "configuration"
+      ],
+      "patterns": [
+        "service-layer",
+        "repository",
+        "middleware"
+      ]
+    },
+    "key_components": [
+      {
+        "name": "server.js",
+        "path": "server.js",
+        "description": "应用主入口文件 - Express服务器配置、路由挂载、中间件设置、启动逻辑",
+        "importance": "high"
+      },
+      {
+        "name": "routes",
+        "path": "routes/",
+        "description": "API路由层 - 包含admin、auth、image、user、batch等路由模块",
+        "importance": "high"
+      },
+      {
+        "name": "services",
+        "path": "services/",
+        "description": "业务逻辑服务层 - aiService(AI接口)、queueService(队列)、configService(配置)、mailService(邮件)",
+        "importance": "high"
+      },
+      {
+        "name": "models",
+        "path": "models/",
+        "description": "数据模型层 - User、Image、Announcement数据模型定义",
+        "importance": "high"
+      },
+      {
+        "name": "config",
+        "path": "config/",
+        "description": "应用配置模块 - 数据库连接配置(config/database.js)",
+        "importance": "high"
+      },
+      {
+        "name": "public",
+        "path": "public/",
+        "description": "静态前端资源 - HTML、CSS、JS静态文件，Modern Minimalist SaaS设计系统",
+        "importance": "medium"
+      },
+      {
+        "name": "utils",
+        "path": "utils/",
+        "description": "工具函数库 - adminInit.js等辅助工具函数",
+        "importance": "medium"
+      },
+      {
+        "name": "docs",
+        "path": "docs/",
+        "description": "项目文档 - 设计系统指南、开发者指南、部署文档等",
+        "importance": "low"
+      }
+    ]
+  },
+  "features": [],
+  "development_index": {
+    "feature": [],
+    "enhancement": [],
+    "bugfix": [],
+    "refactor": [],
+    "docs": []
+  },
+  "statistics": {
+    "total_features": 0,
+    "total_sessions": 0,
+    "last_updated": "2025-12-10T06:06:04.000Z"
+  },
+  "_metadata": {
+    "initialized_by": "cli-explore-agent",
+    "analysis_timestamp": "2025-12-10T06:06:04.000Z",
+    "analysis_mode": "deep-scan"
+  }
+}
