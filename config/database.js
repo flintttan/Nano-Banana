@@ -20,15 +20,23 @@ const dbConfig = {
 // 3. 创建一个数据库连接池（可以让多人同时高效使用数据库）
 const pool = mysql.createPool(dbConfig);
 
-// 4. 定义一个连接函数，用来在程序启动时测试连接
-const connectDB = async () => {
-  try {
-    const connection = await pool.getConnection();
-    console.log('✅ MySQL数据库连接成功！');
-    connection.release(); // 测试完后释放连接，还给连接池
-  } catch (error) {
-    console.error('❌ MySQL数据库连接失败:', error.message);
-    throw error; // 抛出错误，让主程序知道出问题了
+// 4. 定义一个连接函数，用来在程序启动时测试连接（带重试机制）
+const connectDB = async (maxRetries = 10, retryDelay = 3000) => {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const connection = await pool.getConnection();
+      console.log('✅ MySQL数据库连接成功！');
+      connection.release();
+      return;
+    } catch (error) {
+      console.error(`❌ MySQL数据库连接失败 (尝试 ${attempt}/${maxRetries}):`, error.message);
+      if (attempt < maxRetries) {
+        console.log(`⏳ ${retryDelay / 1000} 秒后重试...`);
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+      } else {
+        throw error;
+      }
+    }
   }
 };
 
@@ -130,6 +138,24 @@ const ensureDatabaseInitialized = async () => {
     // 执行用户统计相关表初始化
     console.log('ℹ️ 正在初始化用户统计相关表（如有需要）...');
     await runSqlFile('database-statistics.sql', {
+      ensureDatabase: true
+    });
+
+    // 初始化 AI 模型管理表（幂等）
+    console.log('ℹ️ 正在初始化 AI 模型管理表（如有需要）...');
+    await runSqlFile('database-model-management.sql', {
+      ensureDatabase: true
+    });
+
+    // 应用批量任务文件夹层级相关迁移（幂等）
+    console.log('ℹ️ 正在应用批量任务 folder_path 相关迁移（如有需要）...');
+    await runSqlFile('database-folder-path-migration.sql', {
+      ensureDatabase: true
+    });
+
+    // 应用批量编辑队列类型相关迁移（幂等）
+    console.log('ℹ️ 正在应用批量编辑队列类型相关迁移（如有需要）...');
+    await runSqlFile('database-batch-edit-migration.sql', {
       ensureDatabase: true
     });
   } catch (error) {
