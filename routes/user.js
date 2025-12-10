@@ -3,6 +3,44 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const { pool } = require('../config/database');
 
+// Helper function to track usage statistics
+async function trackUsageStatistics(userId, type, amount = 0) {
+  const connection = await pool.getConnection();
+  try {
+    const today = new Date();
+    const todayString = today.getFullYear() + '-' +
+                       String(today.getMonth() + 1).padStart(2, '0') + '-' +
+                       String(today.getDate()).padStart(2, '0');
+
+    // Build update query based on type
+    let updateField = '';
+    let updateValue = amount;
+
+    if (type === 'checkin') {
+      updateField = 'checkins';
+    } else if (type === 'points_consumed') {
+      updateField = 'points_consumed';
+    } else if (type === 'points_earned') {
+      updateField = 'points_earned';
+    } else if (type === 'images_created') {
+      updateField = 'images_created';
+    }
+
+    // Use INSERT ... ON DUPLICATE KEY UPDATE for upsert
+    await connection.execute(
+      `INSERT INTO usage_statistics (user_id, date, ${updateField})
+       VALUES (?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+       ${updateField} = ${updateField} + ?`,
+      [userId, todayString, updateValue, updateValue]
+    );
+  } catch (error) {
+    console.error('Failed to track usage statistics:', error);
+  } finally {
+    connection.release();
+  }
+}
+
 // 中间件：验证用户Token
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
@@ -166,13 +204,17 @@ router.post('/checkin', authenticateToken, async (req, res, next) => {
             });
 
             await connection.execute(
-                `UPDATE users 
+                `UPDATE users
                  SET drawing_points = ?,
                      checkin_count = ?,
                      last_checkin_date = ?
                  WHERE id = ?`,
                 [newPoints, newCheckinCount, todayString, userId]
             );
+
+            // Track usage statistics
+            await trackUsageStatistics(userId, 'checkin', 1);
+            await trackUsageStatistics(userId, 'points_earned', 10);
 
             // 提交事务
             await connection.commit();

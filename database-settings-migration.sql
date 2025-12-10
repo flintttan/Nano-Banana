@@ -48,5 +48,10 @@ INSERT INTO `system_config` (`config_key`, `config_value`, `description`)
 VALUES ('batch_concurrency', '3', 'Batch image generation concurrency')
 ON DUPLICATE KEY UPDATE `config_value` = '3';
 
--- Create index for faster lookups
-CREATE INDEX IF NOT EXISTS idx_config_key ON system_config(config_key);
+-- Insert default registration settings
+INSERT INTO `system_config` (`config_key`, `config_value`, `description`)
+VALUES
+  ('registration_domain_whitelist', '[]', 'Allowed email domains for registration (JSON array, empty = all domains allowed)'),
+  ('registration_initial_credits', '10', 'Initial credits for new registered users')
+ON DUPLICATE KEY UPDATE
+  `config_key` = VALUES(`config_key`);

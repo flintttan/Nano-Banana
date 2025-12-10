@@ -126,6 +126,12 @@ const ensureDatabaseInitialized = async () => {
     await runSqlFile('database-batch.sql', {
       ensureDatabase: true
     });
+
+    // 执行用户统计相关表初始化
+    console.log('ℹ️ 正在初始化用户统计相关表（如有需要）...');
+    await runSqlFile('database-statistics.sql', {
+      ensureDatabase: true
+    });
   } catch (error) {
     console.error('❌ 数据库自动初始化过程失败:', error.message);
     throw error;

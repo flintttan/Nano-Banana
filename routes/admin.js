@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
-const { pool } = require('../config/database'); 
+const bcrypt = require('bcryptjs');
+const { pool } = require('../config/database');
+const mailService = require('../services/mailService'); 
 
 // ==========================================
 // VIP 通道：后台管理 (旗舰UI版)
@@ -1037,8 +1039,220 @@ router.get('/users', authenticateToken, requireAdmin, async (req, res) => {
     try { const [rows] = await pool.execute('SELECT id, username, email, role, drawing_points FROM users ORDER BY id DESC'); res.json({success:true, data:rows}); } catch(e){res.status(500).json({});}
 });
 router.post('/users/points', authenticateToken, requireAdmin, async (req, res) => {
-    try { await pool.execute('UPDATE users SET drawing_points = drawing_points + ? WHERE id = ?', [req.body.points, req.body.userId]); res.json({success:true}); } catch(e){res.status(500).json({});}
+    let connection;
+    try {
+        const { userId, points, absolute = false } = req.body;
+
+        connection = await pool.getConnection();
+
+        if (absolute) {
+            // Absolute update - set exact points value
+            await connection.execute('UPDATE users SET drawing_points = ? WHERE id = ?', [points, userId]);
+        } else {
+            // Relative update - add points to existing value (default behavior)
+            await connection.execute('UPDATE users SET drawing_points = drawing_points + ? WHERE id = ?', [points, userId]);
+        }
+
+        res.json({success: true});
+    } catch(e) {
+        console.error('Update user points error:', e);
+        res.status(500).json({success: false, error: 'Failed to update user points'});
+    } finally {
+        if (connection) connection.release();
+    }
 });
+
+// User status toggle endpoint - enable/disable user account
+router.put('/users/:id/status', authenticateToken, requireAdmin, async (req, res) => {
+    let connection;
+    try {
+        const userId = req.params.id;
+        const { isActive } = req.body;
+
+        if (typeof isActive !== 'boolean') {
+            return res.status(400).json({
+                success: false,
+                error: 'isActive must be a boolean value'
+            });
+        }
+
+        connection = await pool.getConnection();
+
+        // Check if user exists
+        const [users] = await connection.execute('SELECT id, username, email FROM users WHERE id = ?', [userId]);
+        if (users.length === 0) {
+            return res.status(404).json({
+                success: false,
+                error: 'User not found'
+            });
+        }
+
+        // Update user status
+        await connection.execute('UPDATE users SET is_active = ? WHERE id = ?', [isActive ? 1 : 0, userId]);
+
+        console.log(`User ${userId} status ${isActive ? 'enabled' : 'disabled'} by admin`);
+
+        res.json({
+            success: true,
+            data: {
+                userId: parseInt(userId),
+                isActive,
+                message: `User successfully ${isActive ? 'enabled' : 'disabled'}`
+            }
+        });
+
+    } catch(e) {
+        console.error('Update user status error:', e);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to update user status'
+        });
+    } finally {
+        if (connection) connection.release();
+    }
+});
+
+// User statistics endpoint - get usage trends
+router.get('/users/stats', authenticateToken, requireAdmin, async (req, res) => {
+    let connection;
+    try {
+        const { period = 'day', days = 30 } = req.query;
+
+        connection = await pool.getConnection();
+
+        let dateFilter = '';
+        if (period === 'day') {
+            dateFilter = `AND date >= DATE_SUB(CURDATE(), INTERVAL ${days} DAY)`;
+        } else if (period === 'week') {
+            dateFilter = `AND date >= DATE_SUB(CURDATE(), INTERVAL ${days * 7} DAY)`;
+        } else if (period === 'month') {
+            dateFilter = `AND date >= DATE_SUB(CURDATE(), INTERVAL ${days} MONTH)`;
+        }
+
+        // Get aggregated statistics
+        const [stats] = await connection.execute(
+            `SELECT
+                date,
+                SUM(points_consumed) as points_consumed,
+                SUM(points_earned) as points_earned,
+                SUM(images_created) as images_created,
+                SUM(checkins) as checkins,
+                COUNT(DISTINCT user_id) as active_users
+             FROM usage_statistics
+             WHERE 1=1 ${dateFilter}
+             GROUP BY date
+             ORDER BY date ASC`
+        );
+
+        // Get total statistics
+        const [totals] = await connection.execute(
+            `SELECT
+                SUM(points_consumed) as total_points_consumed,
+                SUM(points_earned) as total_points_earned,
+                SUM(images_created) as total_images_created,
+                SUM(checkins) as total_checkins,
+                COUNT(DISTINCT user_id) as total_active_users,
+                COUNT(*) as total_days
+             FROM usage_statistics
+             WHERE 1=1 ${dateFilter}`
+        );
+
+        res.json({
+            success: true,
+            data: {
+                period,
+                days: parseInt(days),
+                stats,
+                totals: totals[0]
+            }
+        });
+
+    } catch(e) {
+        console.error('Get user statistics error:', e);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to retrieve user statistics'
+        });
+    } finally {
+        if (connection) connection.release();
+    }
+});
+
+// Password reset endpoint - generate temporary password and email user
+router.post('/users/:id/reset-password', authenticateToken, requireAdmin, async (req, res) => {
+    let connection;
+    try {
+        const userId = req.params.id;
+
+        connection = await pool.getConnection();
+
+        // Check if user exists and get email
+        const [users] = await connection.execute('SELECT id, username, email FROM users WHERE id = ?', [userId]);
+        if (users.length === 0) {
+            return res.status(404).json({
+                success: false,
+                error: 'User not found'
+            });
+        }
+
+        const user = users[0];
+
+        // Generate temporary password (12 characters)
+        const tempPassword = generateTempPassword();
+
+        // Hash password with bcrypt (12 salt rounds)
+        const hashedPassword = await bcrypt.hash(tempPassword, 12);
+
+        // Start transaction
+        await connection.beginTransaction();
+
+        try {
+            // Update user password
+            await connection.execute('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, userId]);
+
+            // Send email notification
+            await mailService.sendPasswordResetEmail(user.email, user.username, tempPassword);
+
+            // Commit transaction
+            await connection.commit();
+
+            console.log(`Password reset completed for user ${userId} by admin`);
+
+            res.json({
+                success: true,
+                data: {
+                    userId: parseInt(userId),
+                    email: user.email,
+                    message: 'Password reset successfully. User has been notified via email.'
+                }
+            });
+
+        } catch (error) {
+            // Rollback transaction on error
+            await connection.rollback();
+            throw error;
+        }
+
+    } catch(e) {
+        console.error('Password reset error:', e);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to reset password: ' + e.message
+        });
+    } finally {
+        if (connection) connection.release();
+    }
+});
+
+// Helper function to generate temporary password
+function generateTempPassword() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let password = '';
+    for (let i = 0; i < 12; i++) {
+        password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+}
 
 // Inspiration APIs
 router.get('/inspirations', authenticateToken, requireAdmin, async (req, res) => {

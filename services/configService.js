@@ -100,6 +100,30 @@ class ConfigService {
     return config;
   }
 
+  // Get registration configuration
+  async getRegistrationConfig() {
+    const domainWhitelistStr = await this.get('registration_domain_whitelist') || '[]';
+    let domainWhitelist = [];
+
+    try {
+      domainWhitelist = JSON.parse(domainWhitelistStr);
+      if (!Array.isArray(domainWhitelist)) {
+        console.warn('Invalid domain whitelist format, using empty array');
+        domainWhitelist = [];
+      }
+    } catch (error) {
+      console.warn('Failed to parse domain whitelist, using empty array:', error.message);
+      domainWhitelist = [];
+    }
+
+    const config = {
+      domainWhitelist: domainWhitelist,
+      initialCredits: parseInt(await this.get('registration_initial_credits') || '10')
+    };
+
+    return config;
+  }
+
   // Clear cache for specific key or all keys
   clearCache(key = null) {
     if (key) {

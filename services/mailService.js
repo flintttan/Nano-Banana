@@ -56,3 +56,51 @@ exports.sendVerificationEmail = async (toEmail, code) => {
 
     return transporter.sendMail(mailOptions);
 };
+
+/**
+ * Send password reset email
+ * @param {string} toEmail - Recipient email address
+ * @param {string} username - User's username
+ * @param {string} tempPassword - Temporary password
+ */
+exports.sendPasswordResetEmail = async (toEmail, username, tempPassword) => {
+    const mailConfig = await configService.getMailConfig();
+    const brandName = mailConfig.brandName;
+    const fromHeader = mailConfig.from || `"${brandName} 官方" <${mailConfig.user}>`;
+
+    const transporter = await createTransporter();
+
+    const mailOptions = {
+        from: fromHeader,
+        to: toEmail,
+        subject: `【${brandName}】您的密码已重置`,
+        html: `
+            <div style="background-color:#f3f4f6; padding: 20px; font-family: sans-serif;">
+                <div style="max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <div style="background: linear-gradient(to right, #8B5CF6, #3B82F6); padding: 20px; text-align: center;">
+                        <h1 style="color: #ffffff; margin: 0; font-size: 20px;">${brandName}</h1>
+                    </div>
+                    <div style="padding: 30px; text-align: center; color: #374151;">
+                        <p style="margin-bottom: 10px; font-size: 16px;">尊敬的 <strong>${username}</strong>，</p>
+                        <p style="margin-bottom: 20px; font-size: 16px;">管理员已重置您的密码，您的临时密码是：</p>
+                        <div style="background-color: #F3F4F6; padding: 15px; border-radius: 8px; display: inline-block; margin-bottom: 20px;">
+                            <span style="font-size: 24px; font-weight: bold; letter-spacing: 2px; color: #DC2626; font-family: monospace;">${tempPassword}</span>
+                        </div>
+                        <p style="font-size: 14px; color: #6B7280; margin-bottom: 15px;">请立即使用此临时密码登录系统，并修改您的个人密码。</p>
+                        <p style="font-size: 14px; color: #6B7280;">为了您的账户安全，请不要将此密码分享给他人。</p>
+                    </div>
+                    <div style="background-color: #FEF2F2; padding: 15px; margin: 20px 30px; border-radius: 8px; border-left: 4px solid #EF4444;">
+                        <p style="margin: 0; font-size: 13px; color: #991B1B;">
+                            <strong>安全提醒：</strong>如果您未请求此密码重置，请立即联系管理员。
+                        </p>
+                    </div>
+                    <div style="background-color: #F9FAFB; padding: 15px; text-align: center; font-size: 12px; color: #9CA3AF;">
+                        此邮件由系统自动发送，请勿回复
+                    </div>
+                </div>
+            </div>
+        `
+    };
+
+    return transporter.sendMail(mailOptions);
+};

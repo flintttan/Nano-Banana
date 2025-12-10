@@ -3,12 +3,22 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { pool } = require('../config/database');
 const mailService = require('../services/mailService'); // 【新增】引入邮件服务
+const configService = require('../services/configService'); // 引入配置服务
 
 const router = express.Router();
 
 // 【新增】内存中存储验证码 (重启服务器后会清空，适合中小项目)
 // 结构: { "user@email.com": { code: "123456", expires: 1711111111111 } }
 const verificationCodes = {};
+
+// Helper function: extract domain from email
+function extractDomain(email) {
+    const atIndex = email.lastIndexOf('@');
+    if (atIndex === -1 || atIndex === email.length - 1) {
+        return null;
+    }
+    return email.substring(atIndex + 1).toLowerCase();
+}
 
 // 这是一个中间件，用于从token中获取用户信息
 const authenticateToken = (req, res, next) => {
@@ -85,6 +95,22 @@ router.post('/register', async (req, res, next) => {
             return res.status(400).json({ success: false, error: '密码至少需要6个字符' });
         }
 
+        // === 【新增】域名白名单验证 开始 ===
+        const registrationConfig = await configService.getRegistrationConfig();
+        const emailDomain = extractDomain(email);
+
+        if (!emailDomain) {
+            return res.status(400).json({ success: false, error: '邮箱格式无效' });
+        }
+
+        // 如果白名单不为空，检查邮箱域名是否在白名单中
+        if (registrationConfig.domainWhitelist.length > 0) {
+            if (!registrationConfig.domainWhitelist.includes(emailDomain)) {
+                return res.status(400).json({ success: false, error: 'Domain not allowed' });
+            }
+        }
+        // === 域名白名单验证 结束 ===
+
         const [existingUsers] = await pool.execute(
             'SELECT * FROM users WHERE username = ? OR email = ?',
             [username, email]
@@ -98,13 +124,13 @@ router.post('/register', async (req, res, next) => {
                 return res.status(409).json({ success: false, error: '该邮箱已被注册' });
             }
         }
-        
+  
         const hashedPassword = await bcrypt.hash(password, 10);
-        
-        // 新用户赠送10积分，创作数为0
+
+        // 使用配置的初始积分值
         const [result] = await pool.execute(
-            'INSERT INTO users (username, email, password, drawing_points, creation_count) VALUES (?, ?, ?, 10, 0)', 
-            [username, email, hashedPassword]
+            'INSERT INTO users (username, email, password, drawing_points, creation_count) VALUES (?, ?, ?, ?, 0)',
+            [username, email, hashedPassword, registrationConfig.initialCredits]
         );
         const insertId = result.insertId;
 
@@ -116,7 +142,7 @@ router.post('/register', async (req, res, next) => {
             username: username,
             email: email,
             role: 'user',
-            drawing_points: 10,  
+            drawing_points: registrationConfig.initialCredits,
             creation_count: 0
         };
 
@@ -124,7 +150,7 @@ router.post('/register', async (req, res, next) => {
 
         res.status(201).json({
             success: true,
-            message: '注册成功！已赠送10积分',
+            message: `注册成功！已赠送${registrationConfig.initialCredits}积分`,
             data: {
                 user: userProfile,
                 token: token
